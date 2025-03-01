@@ -7,8 +7,8 @@ const { Pool } = pkg; // Importando Pool corretamente
 
 // Criando uma nova conexão com o banco de dados
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
+    user: process.env.USER,
+    host: process.env.HOST,
     database: process.env.NAME,
     password: process.env.PASSWORD,
     port: 5432

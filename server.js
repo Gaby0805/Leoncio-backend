@@ -10,7 +10,7 @@ import comodatoRoutes from './routes/comodato.js';
 import estoqueRoutes from './routes/estoque.js';
 
 const app = express();
-const port = 3000;
+const port = 3333;
 
 app.use(cors());
 app.use(bodyParser.json());
