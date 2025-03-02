@@ -6,7 +6,7 @@ dotenv.config();
 const { Pool } = pkg; // Importando Pool corretamente
 
 // Criando uma nova conexão com o banco de dados
-const pool = new Pool({
+const connection = new Pool({
     user: process.env.USER,
     host: process.env.HOST,
     database: process.env.NAME,
@@ -16,7 +16,7 @@ const pool = new Pool({
 
 const gettime = async () => {
     try {
-        const res = await pool.query('SELECT * FROM usuarios');
+        const res = await connection.query('SELECT * FROM usuarios');
         console.log(res.rows);
     } catch (error) {
         console.error('Erro ao buscar dados:', error);
@@ -26,4 +26,4 @@ const gettime = async () => {
 // Executa a função de teste
 gettime();
 
-export default pool;
+export default connection;
