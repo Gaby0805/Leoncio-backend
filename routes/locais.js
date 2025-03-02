@@ -43,8 +43,8 @@ router.get('/cidade/estados', async(req, res) => {
 
     }
 })
-//post cidades
 
+//post cidades
 router.post('/cidade/', async(req, res) => {
     try{
         const {nome_cidades, estado_id} = req.body
@@ -58,7 +58,35 @@ router.post('/cidade/', async(req, res) => {
     }    
 
 })
+//delete cidade
+router.delete('/cidade/', async(req, res) => {
+    try{
+        const {id_cidade} = req.body
+        const query = "DELETE from cidades where id_cidade = $1"
+        const result = await connection.query(query, [id_cidade])
+        res.json({cidade: `cidade ${id_cidade} excluida`})
+    }
+    catch  (error) {
 
+        res.status(500).json({ Error: error.message });
+    }    
+
+})
+
+//put cidade
+router.put('/cidade/', async(req, res) => {
+    try{
+        const {nome_cidades,id_cidade} = req.body
+        const query = "update cidades set nome_cidades = $1 where id_cidade = $2"
+        const result = await connection.query(query, [nome_cidades,id_cidade])
+        res.json({cidade: `cidade ${nome_cidades} alterada `})
+    }
+    catch  (error) {
+
+        res.status(500).json({ Error: error.message });
+    }    
+
+})
 
 
 export default router;
