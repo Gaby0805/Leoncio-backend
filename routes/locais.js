@@ -163,7 +163,7 @@ router.delete('/cidade/', async (req, res) => {
             return res.status(400).json({ Error: "O campo 'id_cidade' é obrigatório." });
         }
 
-        const query = "DELETE FROM cidades WHERE id_cidade = $1 RETURNING *";
+        const query = "DELETE FROM cidades WHERE id_cidade = $1 ";
         const result = await connection.query(query, [id_cidade]);
 
         if (result.rowCount === 0) {
