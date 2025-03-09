@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const { Pool } = pkg; // Importando Pool corretamente
-
 // Criando uma nova conexão com o banco de dados
 const connection = new Pool({
     user: process.env.USER,
@@ -16,7 +15,7 @@ const connection = new Pool({
 
 const gettime = async () => {
     try {
-        const res = await connection.query('SELECT * FROM usuarios');
+        const res = await connection.query('SELECT');
         console.log(res.rows);
     } catch (error) {
         console.error('Erro ao buscar dados:', error);

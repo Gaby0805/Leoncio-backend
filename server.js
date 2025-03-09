@@ -8,7 +8,8 @@ import usuariosRoutes from './routes/usuarios.js';
 import aniversarianteRoutes from './routes/aniversariante.js';
 import comodatoRoutes from './routes/comodato.js';
 import estoqueRoutes from './routes/estoque.js';
-
+import quantidadeRoutes from './routes/quantidade.js';
+import transacaoRoutes from './routes/transacao.js';
 
 
 const app = express();
@@ -27,6 +28,10 @@ app.use('/aniversariante', aniversarianteRoutes);
 app.use('/comodato', comodatoRoutes);
 // Estoque e quantidade
 app.use('/estoque', estoqueRoutes);
+// Estoque e quantidade
+app.use('/transacao', transacaoRoutes);
+// Estoque e quantidade
+app.use('/quantidades', quantidadeRoutes);
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
   console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
