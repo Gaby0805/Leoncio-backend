@@ -67,7 +67,7 @@ router.get('/ComodatoList', async (req, res) => {
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
         FROM Quantidades q
         INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
-        where e.area_material = 'Comodato'
+        where e.area_material = 'Comodato' 
         
         `;
         const result = await connection.query(query);
@@ -77,6 +77,37 @@ router.get('/ComodatoList', async (req, res) => {
         res.status(500).json({ Error: error.message });
     }
 });
+/**
+ * @swagger
+ * /estoque/ComodatoListtext:
+ *   get:
+ *     summary: Listar quantidades de materiais com informações do estoque 
+ *     description: Retorna a quantidade dos produtos junto com os detalhes do estoque usando INNER JOIN para o estoque do Comodato.
+ *     tags: [estoque]
+ *     responses:
+ *       200:
+ *         description: Lista de quantidades com detalhes do estoque retornada com sucesso.
+ */
+router.get('/ComodatoListtext', async (req, res) => {
+    try {
+        const query = `
+
+        SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
+        FROM Quantidades q
+        INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
+        where e.area_material = 'Comodato' and e.status = 'Ativo'
+                
+        `;
+        const result = await connection.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ Error: error.message });
+    }
+});
+
+
+
 /**
  * @swagger
  * /estoque/Lions:

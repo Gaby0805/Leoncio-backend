@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
  * /quantidades:
  *   post:
  *     summary: Adicionar quantidade de um material
- *     description: Insere um novo registro de quantidade no banco de dados.
+ *     description: Insere um novo registro de quantidade 'no banco de dados.
  *     tags: [quantidades]
  *     requestBody:
  *       required: true
@@ -154,14 +154,14 @@ router.delete('/', async (req, res) => {
  */
 router.put('/', async (req, res) => {
     try {
-        const { id_quantidade, quantidade, estoque_id } = req.body;
+        const { id_quantidade, quantidade } = req.body;
 
-        if (isEmpty(id_quantidade) || isEmpty(quantidade) || isEmpty(estoque_id)) {
+        if (isEmpty(id_quantidade) || isEmpty(quantidade)) {
             return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
         }
 
-        const query = "UPDATE Quantidades SET quantidade = $2, estoque_id = $3 WHERE id_quantidade = $1 RETURNING *";
-        const result = await connection.query(query, [id_quantidade, quantidade, estoque_id]);
+        const query = "UPDATE Quantidades SET quantidade = $2 WHERE id_quantidade = $1 RETURNING *";
+        const result = await connection.query(query, [id_quantidade, quantidade]);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ Error: "Quantidade não encontrada." });
