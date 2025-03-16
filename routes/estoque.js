@@ -49,6 +49,29 @@ router.get('/', async (req, res) => {
 });
 
 
+/**
+ * @swagger
+ * /estoque/valores:
+ *   get:
+ *     summary: Listar material especifico
+ *     description: Retorna o valor dos materias especificos.
+ *     tags: [estoque]
+ *     responses:
+ *       200:
+ *         description: Lista de materiais retornada com sucesso.
+ */
+router.get('/valores', async (req, res) => {
+    try {
+        const id_estoque = req.body
+        const query = `SELECT * FROM Estoque where id_estoque = ?`;
+        const result = await connection.query(query,);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ Error: error.message });
+    }
+});
+
+
 
 /**
  * @swagger
@@ -67,8 +90,7 @@ router.get('/ComodatoList', async (req, res) => {
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
         FROM Quantidades q
         INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
-        where e.area_material = 'Comodato' 
-        
+        where e.area_material = 'Comodato' and q.quantidade > 0
         `;
         const result = await connection.query(query);
         res.json(result.rows);
@@ -77,6 +99,7 @@ router.get('/ComodatoList', async (req, res) => {
         res.status(500).json({ Error: error.message });
     }
 });
+
 /**
  * @swagger
  * /estoque/ComodatoListtext:
@@ -91,7 +114,6 @@ router.get('/ComodatoList', async (req, res) => {
 router.get('/ComodatoListtext', async (req, res) => {
     try {
         const query = `
-
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
         FROM Quantidades q
         INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
@@ -167,6 +189,7 @@ router.get('/lions', async (req, res) => {
  *       201:
  *         description: Material inserido com sucesso.
  */
+
 router.post('/', async (req, res) => {
     try {
         const { nome_material, descricao, valor, status, area_material, aquisicao, tamanho } = req.body;
@@ -261,20 +284,21 @@ router.delete('/', async (req, res) => {
  */
 router.put('/', async (req, res) => {
     try {
-        const { id_estoque, nome_material, descricao, valor, status, area_material, aquisicao, tamanho } = req.body;
+        const { estoque_id, nome_material, descricao,  status, tamanho } = req.body;
 
-        if (isEmpty(id_estoque) || isEmpty(nome_material) || isEmpty(descricao) || isEmpty(valor) || isEmpty(status) || isEmpty(area_material) || isEmpty(aquisicao) || isEmpty(tamanho)) {
+        console.log(estoque_id, nome_material, descricao,  status, tamanho)
+        if (isEmpty(estoque_id) || isEmpty(nome_material) || isEmpty(descricao)|| isEmpty(status)  || isEmpty(tamanho)) {
             return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
         }
 
-        const query = "UPDATE Estoque SET nome_material = $2, descricao = $3, valor = $4, status = $5, area_material = $6, aquisicao = $7, tamanho = $8 WHERE id_estoque = $1 RETURNING *";
-        const result = await connection.query(query, [id_estoque, nome_material, descricao, valor, status, area_material, aquisicao, tamanho]);
+        const query = "UPDATE Estoque SET nome_material = $1, descricao = $2,  status = $3, tamanho = $4 WHERE id_estoque = $5";
+        const result = await connection.query(query, [ nome_material, descricao,  status, tamanho, estoque_id,]);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ Error: "Material não encontrado." });
         }
 
-        res.json({ message: `Material com ID ${id_estoque} atualizado com sucesso.` });
+        res.json({ message: `Material com ID ${estoque_id} atualizado com sucesso.` });
     } catch (error) {
         res.status(500).json({ Error: error.message });
     }

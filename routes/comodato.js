@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/info', async (req, res) => {
     try {
-        const query = `select id_comodato, nome_comodato from pessoas_comodato`;
+        const query = `select id_comodato, nome from pessoas_comodato`;
         const result = await connection.query(query);
         res.json(result.rows);
     } catch (error) {
@@ -82,9 +82,9 @@ router.get('/info', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               nome_comodato:
+ *               nome:
  *                 type: string
- *               sobrenome_comodato:
+ *               sobrenome:
  *                 type: string
  *               cpf:
  *                 type: string
@@ -102,8 +102,6 @@ router.get('/info', async (req, res) => {
  *                 type: integer
  *               complemento:
  *                 type: string
- *               nacionalidade:
- *                 type: string
  *               numero_telefone:
  *                 type: string
  *               cidade_id:
@@ -115,8 +113,8 @@ router.get('/info', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const {
-            nome_comodato,
-            sobrenome_comodato,
+            nome,
+            sobrenome,
             cpf,
             rg,
             cep,
@@ -125,14 +123,28 @@ router.post('/', async (req, res) => {
             rua,
             numero_casa,
             complemento,
-            nacionalidade,
-            numero_telefone,
+            telefone,
             cidade_id
         } = req.body;
 
+
+
+        console.log(            
+            nome,
+            sobrenome,
+            cpf,
+            rg,
+            cep,
+            profissao,
+            estado_civil,
+            rua,
+            numero_casa,
+            complemento,
+            telefone,
+            cidade_id)
         if (
-            isEmpty(nome_comodato) ||
-            isEmpty(sobrenome_comodato) ||
+            isEmpty(nome) ||
+            isEmpty(sobrenome) ||
             isEmpty(cpf) ||
             isEmpty(rg) ||
             isEmpty(cep) ||
@@ -140,8 +152,7 @@ router.post('/', async (req, res) => {
             isEmpty(estado_civil) ||
             isEmpty(rua) ||
             isEmpty(numero_casa) ||
-            isEmpty(nacionalidade) ||
-            isEmpty(numero_telefone) ||
+            isEmpty(telefone) ||
             isEmpty(cidade_id)
         ) {
             return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
@@ -150,8 +161,8 @@ router.post('/', async (req, res) => {
         // Chama a função PL/pgSQL para inserir um novo comodato
         const query = "SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)";
         const result = await connection.query(query, [
-            nome_comodato,
-            sobrenome_comodato,
+            nome,
+            sobrenome,
             cpf,
             rg,
             cep,
@@ -160,8 +171,8 @@ router.post('/', async (req, res) => {
             rua,
             numero_casa,
             complemento,
-            nacionalidade,
-            numero_telefone,
+            'Brasileiro',
+            telefone,
             cidade_id
         ]);
 

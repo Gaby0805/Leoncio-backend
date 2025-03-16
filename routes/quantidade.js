@@ -154,20 +154,24 @@ router.delete('/', async (req, res) => {
  */
 router.put('/', async (req, res) => {
     try {
-        const { id_quantidade, quantidade } = req.body;
-
-        if (isEmpty(id_quantidade) || isEmpty(quantidade)) {
+        const { estoque_id, quantidade } = req.body;
+        console.log(estoque_id, quantidade)
+        if (isEmpty(estoque_id) ) {
             return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
         }
+        if (quantidade < 0) {
+            return res.status(400).json ({Error: "Quantidade não pode ser menor que zero"})
+        }
 
-        const query = "UPDATE Quantidades SET quantidade = $2 WHERE id_quantidade = $1 RETURNING *";
-        const result = await connection.query(query, [id_quantidade, quantidade]);
+        const query = "UPDATE Quantidades SET quantidade = $2 WHERE estoque_id = $1 RETURNING *";
+        const result = await connection.query(query, [estoque_id,quantidade ]);
 
-        if (result.rowCount === 0) {
+        if (result.rowCount == 0) {
+            console.log(result)
             return res.status(404).json({ Error: "Quantidade não encontrada." });
         }
 
-        res.json({ message: `Quantidade com ID ${id_quantidade} atualizada com sucesso.` });
+        res.json({ message: `Quantidade com ID ${estoque_id} atualizada com sucesso.` });
     } catch (error) {
         res.status(500).json({ Error: error.message });
     }

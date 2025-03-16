@@ -114,6 +114,55 @@ router.post('/', async (req, res) => {
         res.status(500).json({ Error: error.message });
     }
 });
+/**
+ * @swagger
+ * /usuario/autenticar:
+ *   post:
+ *     summary: Login usuario
+ *     description: Autenticar Usuario.
+ *     tags: [usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               u_email:
+ *                 type: string
+ *               u_senha:
+ *                 type: string
+
+ *     responses:
+ *       201:
+ *         description: usuario criada com sucesso.
+ */
+router.post('/autenticar', async (req, res) => {
+    try { //O tipo de usuario se é adm ou normal
+        const { email,senha  } = req.body;
+        console.log(email, senha)
+        if (isEmpty(email) || isEmpty(senha)) {
+            return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
+        }
+        //fazer hash da senha
+        const query = "select * from Usuarios where email = $1 and senha = $2";
+        const result = await connection.query(query, [email,senha]);
+        if (result.rows.length > 0 ) {
+            console.log(result)
+            res.json({ success: true, message: "Usuário autenticado com sucesso!" });
+        }
+        else {
+            
+            res.json({ success: false, message: "Senha ou login não estão correto" });
+
+
+        }
+
+
+    } catch (error) { 
+        res.status(500).json({ Error: error.message });
+    }
+});
 
 /**
  * @swagger
