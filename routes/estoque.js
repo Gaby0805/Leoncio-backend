@@ -116,8 +116,8 @@ router.get('/ComodatoListtext', async (req, res) => {
         const query = `
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
         FROM Quantidades q
-        INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
-        where e.area_material = 'Comodato' and e.status = 'Ativo'
+        RIGHT JOIN Estoque e ON q.estoque_id = e.id_estoque
+        where e.area_material = 'Comodato' 
                 
         `;
         const result = await connection.query(query);
@@ -146,7 +146,7 @@ router.get('/lions', async (req, res) => {
         const query = `
             SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
             FROM Quantidades q
-            INNER JOIN Estoque e ON q.estoque_id = e.id_estoque
+            RIGHT JOIN Estoque e ON q.estoque_id = e.id_estoque
             where e.area_material = 'Lions'
         `;
         const result = await connection.query(query);

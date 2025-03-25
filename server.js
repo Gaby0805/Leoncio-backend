@@ -2,6 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import setupSwagger from './swagger.js'; // Importando o Swaggerimport swaggerdocs from './swagger.js'
+import connection from './Database.js';
+
 // import rotas 
 import locaisRoutes from './routes/locais.js';
 import usuariosRoutes from './routes/usuarios.js';
@@ -10,6 +12,26 @@ import comodatoRoutes from './routes/comodato.js';
 import estoqueRoutes from './routes/estoque.js';
 import quantidadeRoutes from './routes/quantidade.js';
 import transacaoRoutes from './routes/transacao.js';
+import scheduleEmail from './tasks/organize.js';
+
+
+async function reagendarEmails() {
+  try {
+    const { rows } = await connection.query(`
+      SELECT e.data_limite, c.nome_comodato, c.sobrenome_comodato
+      FROM emprestimo e
+      INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato
+      WHERE e.data_limite >= CURRENT_DATE;
+    `);
+
+    rows.forEach((emprestimo) => {scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobreno)});
+  } catch (error) {
+    console.error('Erro ao reagendar e-mails:', error);
+  }
+}
+
+// Chamamos essa função ao iniciar o servidor
+reagendarEmails();
 
 
 const app = express();

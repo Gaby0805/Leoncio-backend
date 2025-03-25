@@ -162,18 +162,21 @@ router.put('/', async (req, res) => {
         if (quantidade < 0) {
             return res.status(400).json ({Error: "Quantidade não pode ser menor que zero"})
         }
-
+        
         const query = "UPDATE Quantidades SET quantidade = $2 WHERE estoque_id = $1 RETURNING *";
         const result = await connection.query(query, [estoque_id,quantidade ]);
-
-        if (result.rowCount == 0) {
-            console.log(result)
-            return res.status(404).json({ Error: "Quantidade não encontrada." });
-        }
-
-        res.json({ message: `Quantidade com ID ${estoque_id} atualizada com sucesso.` });
+        
+        if (result.rowCount === 0) {
+            const query1 = "INSERT INTO Quantidades (quantidade, estoque_id) VALUES ($1, $2)";
+            const result1 = await connection.query(query1, [quantidade, estoque_id]);
+            if (result1.rowCount === 0){
+               return res.status(400).json({Error: "Erro ao criar"})
+            }
+            return res.status(201).json({ message: "Quantidade inserida com sucesso!", quantidade: result.rows[0] });
+        } 
+        return res.json({ message: `Quantidade com ID ${estoque_id} atualizada com sucesso.` });
     } catch (error) {
-        res.status(500).json({ Error: error.message });
+        return res.status(500).json({ Error: error.message });
     }
 });
 

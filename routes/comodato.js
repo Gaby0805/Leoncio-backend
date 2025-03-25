@@ -102,7 +102,7 @@ router.get('/info', async (req, res) => {
  *                 type: integer
  *               complemento:
  *                 type: string
- *               numero_telefone:
+ *               telefone:
  *                 type: string
  *               cidade_id:
  *                 type: integer
@@ -127,61 +127,37 @@ router.post('/', async (req, res) => {
             cidade_id
         } = req.body;
 
-
-
-        console.log(            
-            nome,
-            sobrenome,
-            cpf,
-            rg,
-            cep,
-            profissao,
-            estado_civil,
-            rua,
-            numero_casa,
-            complemento,
-            telefone,
-            cidade_id)
         if (
-            isEmpty(nome) ||
-            isEmpty(sobrenome) ||
-            isEmpty(cpf) ||
-            isEmpty(rg) ||
-            isEmpty(cep) ||
-            isEmpty(profissao) ||
-            isEmpty(estado_civil) ||
-            isEmpty(rua) ||
-            isEmpty(numero_casa) ||
-            isEmpty(telefone) ||
-            isEmpty(cidade_id)
+            !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
+            !rua || !numero_casa || !telefone || !cidade_id
         ) {
-            return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
+            return res.status(400).json({ error: "Todos os campos são obrigatórios." });
         }
 
-        // Chama a função PL/pgSQL para inserir um novo comodato
-        const query = "SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)";
-        const result = await connection.query(query, [
-            nome,
-            sobrenome,
-            cpf,
-            rg,
-            cep,
-            profissao,
-            estado_civil,
-            rua,
-            numero_casa,
-            complemento,
-            'Brasileiro',
-            telefone,
-            cidade_id
+        // Chama a função para inserir os dados
+        const insertQuery = `
+            select insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+        `;
+        await connection.query(insertQuery, [
+            nome, sobrenome, cpf, rg, cep, profissao, estado_civil,
+            rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id
         ]);
+
+        // Busca o ID do último registro inserido
+        const idQuery = `
+            SELECT id_comodato FROM Pessoas_Comodato 
+            WHERE cpf = $1 ORDER BY id_comodato DESC LIMIT 1;
+        `;
+        const result = await connection.query(idQuery, [cpf]);
+
+        const novoId = result.rows[0]?.id_comodato;
 
         res.status(201).json({
             message: "Comodato inserido com sucesso!",
-            comodato: result.rows[0]
+            id_comodato: novoId
         });
     } catch (error) {
-        res.status(500).json({ Error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 

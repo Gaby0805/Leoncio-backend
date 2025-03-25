@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 });
 /**
  * @swagger
- * /usuario:
+ * /usuario/info:
  *   get:
  *     summary: Listar usuarios
  *     description: Retorna somente id e o nome do usuario 
@@ -67,7 +67,62 @@ router.get('/info', async (req, res) => {
         res.status(500).json({ Error: error.message });
     }
 });
+/**
+/**
+ * @swagger
+ * /usuario/especifico:
+ *   post:
+ *     summary: Obtém um usuário específico
+ *     description: Retorna o nome de um usuário pelo ID informado.
+ *     tags: [usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_usuario:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: Usuário encontrado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 nome_user:
+ *                   type: string
+ *                   example: "João Silva"
+ *       400:
+ *         description: Parâmetro id_usuario ausente
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/especifico', async (req, res) => {
+    const { id_usuario } = req.body; // Pegando o ID do body
 
+    if (!id_usuario) {
+        return res.status(400).json({ error: "O id_usuario é obrigatório" });
+    }
+
+    try {
+        const query = `SELECT nome_user FROM usuarios WHERE id_user = $1`;
+        const result = await connection.query(query, [id_usuario]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 /**
  * @swagger
  * /usuario/:
@@ -128,9 +183,9 @@ router.post('/', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               u_email:
+ *               email:
  *                 type: string
- *               u_senha:
+ *               senha:
  *                 type: string
 
  *     responses:
@@ -145,11 +200,10 @@ router.post('/autenticar', async (req, res) => {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
         //fazer hash da senha
-        const query = "select * from Usuarios where email = $1 and senha = $2";
+        const query = "select id_user from Usuarios where email = $1 and senha = $2";
         const result = await connection.query(query, [email,senha]);
         if (result.rows.length > 0 ) {
-            console.log(result)
-            res.json({ success: true, message: "Usuário autenticado com sucesso!" });
+            res.json({ success: true, message: "Usuário autenticado com sucesso!", id_usuario: result.rows[0].id_user});
         }
         else {
             
