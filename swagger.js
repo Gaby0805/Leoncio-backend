@@ -8,7 +8,22 @@ const swaggerDefinition = {
         version: '1.0.0',
         description: 'Documentação da API de Cidades e Estados usando Swagger.',
     },
-    servers: [
+    components: {
+        securitySchemes: {
+            bearerAuth: {
+                type: "http",
+                scheme: "bearer",
+                bearerFormat: "JWT",
+            },
+        },
+    },
+    security: [
+        {
+            bearerAuth: [],
+        },
+    ],
+
+servers: [
         {
             url: 'http://localhost:3333',
             description: 'Servidor Local',

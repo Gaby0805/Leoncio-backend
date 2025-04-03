@@ -1,6 +1,6 @@
 import express from 'express';
 import connection from '../Database.js';
- 
+import {authMiddleware} from './authuser.js' 
 
 const router = express.Router();
 const isEmpty = (value) => !value || value.toString().trim() === '';
@@ -38,7 +38,7 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de comodato  retornada com sucesso.
  */
-router.get('/', async (req, res) => {
+router.get('/',authMiddleware, async (req, res) => {
     try {
         const query = `select * from pessoas_comodato`;
         const result = await connection.query(query);
@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
  *       200:
  *         description: Lista de comodatos retornada com sucesso.
  */
-router.get('/info', async (req, res) => {
+router.get('/info', authMiddleware,async (req, res) => {
     try {
         const query = `select id_comodato, nome from pessoas_comodato`;
         const result = await connection.query(query);
@@ -110,7 +110,7 @@ router.get('/info', async (req, res) => {
  *       201:
  *         description: comodato criado com sucesso.
  */
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware,async (req, res) => {
     try {
         const {
             nome,
@@ -181,7 +181,7 @@ router.post('/', async (req, res) => {
  *       200:
  *         description: comodato excluída com sucesso.
  */
-router.delete('/', async (req, res) => {
+router.delete('/',authMiddleware, async (req, res) => {
     try {
         const { id_comodato } = req.body;
 
@@ -234,7 +234,7 @@ router.delete('/', async (req, res) => {
  *       200:
  *         description: comodato alterada com sucesso.
  */
-router.put('/', async (req, res) => {
+router.put('/', authMiddleware,async (req, res) => {
     try {
         const { id_comodato,u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo } = req.body;
 
@@ -256,3 +256,7 @@ router.put('/', async (req, res) => {
 });
 
 export default router;
+
+// authMiddleware, (req, res) => {
+//     res.json({ message: "Acesso autorizado!", user: req.user });
+// });

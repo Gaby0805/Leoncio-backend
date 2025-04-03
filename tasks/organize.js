@@ -15,9 +15,7 @@ function scheduleEmail(emprestimo, nome, sobrenome) {
   }
 
   try{
-    
-    console.log(`E-mail agendado para: ${data_limite}, ${nome}, ${sobrenome}`);
-    scheduleJob('2025-03-26T04:00:00.000Z', () => {
+    scheduleJob(data_limite, () => {
       Enviar(
         'Lembrete de Empréstimo',
         `O emprestimo do ${nome} ${sobrenome} passou o prazo de três meses, por favor olhe o site para o contato`

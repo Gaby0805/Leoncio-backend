@@ -1,6 +1,8 @@
 import express from 'express';
 import connection from '../Database.js';
- 
+import bcrypt from 'bcrypt'
+import {authMiddleware, validationLogin} from './authuser.js'
+
 
 const router = express.Router();
 const isEmpty = (value) => !value || value.toString().trim() === '';
@@ -38,10 +40,28 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de usuarios  retornada com sucesso.
  */
-router.get('/', async (req, res) => {
+router.get('/',authMiddleware, async (req, res) => {
     try {
         const query = `select * from usuarios`;
         const result = await connection.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ Error: error.message });
+    }
+});
+/**
+ * @swagger
+ * /usuario/gettoken:
+ *   get:
+ *     summary: pega um token
+ *     description: Retorna todos os usuarios 
+ *     tags: [usuarios]
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios  retornada com sucesso.
+ */
+router.get('/gettoken',authMiddleware, async (req, res) => {
+    try {
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ Error: error.message });
@@ -58,9 +78,9 @@ router.get('/', async (req, res) => {
  *       200:
  *         description: usuario  retornada com sucesso.
  */
-router.get('/info', async (req, res) => {
+router.get('/info',authMiddleware, async (req, res) => {
     try {
-        const query = `select id_usuario, nome_user from usuarios`;
+        const query = `select id_user, nome_user from usuarios`;
         const result = await connection.query(query);
         res.json(result.rows);
     } catch (error) {
@@ -103,7 +123,7 @@ router.get('/info', async (req, res) => {
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/especifico', async (req, res) => {
+router.post('/especifico',authMiddleware, async (req, res) => {
     const { id_usuario } = req.body; // Pegando o ID do body
 
     if (!id_usuario) {
@@ -153,16 +173,17 @@ router.post('/especifico', async (req, res) => {
  *       201:
  *         description: usuario criada com sucesso.
  */
-router.post('/', async (req, res) => {
+router.post('/',authMiddleware,async (req, res) => {
     try { //O tipo de usuario se é adm ou normal
         const { u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo  } = req.body;
 
         if (isEmpty(u_cpf) || isEmpty(u_email) || isEmpty(u_nome) || isEmpty(u_senha) || isEmpty(u_sobrenome) || isEmpty(u_tipo) ) {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
+        const hashpassword = await bcrypt.hash(u_senha, 10)
         //fazer hash da senha
         const query = "select insert_usuario($1,$2,$3,$4,$5,$6)";
-        const result = await connection.query(query, [u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo]);
+        const result = await connection.query(query, [u_nome,u_sobrenome,u_email,u_cpf,hashpassword,u_tipo]);
 
         res.status(201).json({ message: "usuario inserida com sucesso!", usuario: result.rows[0] });
     } catch (error) { 
@@ -193,30 +214,46 @@ router.post('/', async (req, res) => {
  *         description: usuario criada com sucesso.
  */
 router.post('/autenticar', async (req, res) => {
-    try { //O tipo de usuario se é adm ou normal
-        const { email,senha  } = req.body;
-        console.log(email, senha)
+    try {
+        // O tipo de usuário se é admin ou normal
+        const { email, senha } = req.body;
+        console.log(email, senha);
         if (isEmpty(email) || isEmpty(senha)) {
-            return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
+            return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
         }
-        //fazer hash da senha
-        const query = "select id_user from Usuarios where email = $1 and senha = $2";
-        const result = await connection.query(query, [email,senha]);
-        if (result.rows.length > 0 ) {
-            res.json({ success: true, message: "Usuário autenticado com sucesso!", id_usuario: result.rows[0].id_user});
+        // Consultar o banco de dados
+        const query = "SELECT id_user, senha FROM Usuarios WHERE email = $1";
+        const result = await connection.query(query, [email]);
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            const ismatch = await bcrypt.compare(senha, user.senha);
+            console.log("Passo 1");
+            if (ismatch) {
+                console.log("Passo 2");
+                try {
+                    const token = validationLogin(user.id_user);
+                    console.log("Passo 3");
+                    res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'Strict',  })
+                    console.log('cookie enviado',res.getHeader('Set-Cookie'))
+                    res.status(201).json({ success: true, message: "Logado", id_usuario: user.id_user});
+                } catch (err) {
+                    console.error("Erro ao gerar o token:", err);
+                    res.status(500).json({ success: false, message: "Erro ao gerar o token." });
+                }
+            } else {
+                console.log("Passo 4");
+                res.json({ success: false, message: "Senha ou login não estão corretos." });
+            }
+        } else {
+            console.log("Passo 5");
+            res.json({ success: false, message: "Usuário não encontrado." });
         }
-        else {
-            
-            res.json({ success: false, message: "Senha ou login não estão correto" });
-
-
-        }
-
-
     } catch (error) { 
+        console.error("Erro interno:", error);
         res.status(500).json({ Error: error.message });
     }
-});
+}
+);
 
 /**
  * @swagger
@@ -238,7 +275,7 @@ router.post('/autenticar', async (req, res) => {
  *       200:
  *         description: usuario excluída com sucesso.
  */
-router.delete('/', async (req, res) => {
+router.delete('/',authMiddleware, async (req, res) => {
     try {
         const { id_usuario } = req.body;
 
@@ -253,7 +290,7 @@ router.delete('/', async (req, res) => {
             return res.status(404).json({ Error: "usuario não encontrada." });
         }
 
-        res.json({ message: `usuario com ID ${id_usuario} excluída com sucesso.` });
+        res.json({ message: `usuario com ID ${id_usuario} excluída com sucesso` });
     } catch (error) {
         res.status(500).json({ Error: error.message });
     }
@@ -291,7 +328,7 @@ router.delete('/', async (req, res) => {
  *       200:
  *         description: usuario alterada com sucesso.
  */
-router.put('/', async (req, res) => {
+router.put('/',authMiddleware, async (req, res) => {
     try {
         const { id_usuario,u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo } = req.body;
 

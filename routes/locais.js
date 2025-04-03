@@ -1,6 +1,6 @@
 import express from 'express';
 import connection from '../Database.js';
-
+import {authMiddleware} from './authuser.js'
 const router = express.Router();
 
 // Função para validar se um valor é nulo ou vazio
@@ -40,7 +40,7 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
-router.get('/estado', async (req, res) => {
+router.get('/estado',authMiddleware, async (req, res) => {
     try {
         const query = 'SELECT * FROM Estados';
         const result = await connection.query(query);
@@ -61,7 +61,7 @@ router.get('/estado', async (req, res) => {
  *       200:
  *         description: Lista de cidades retornada com sucesso.
  */
-router.get('/cidade', async (req, res) => {
+router.get('/cidade',authMiddleware, async (req, res) => {
     try {
         const query = 'SELECT * FROM Cidades';
         const result = await connection.query(query);
@@ -82,7 +82,7 @@ router.get('/cidade', async (req, res) => {
  *       200:
  *         description: Lista de cidades com estados retornada com sucesso.
  */
-router.get('/cidade/estados', async (req, res) => {
+router.get('/cidade/estados',authMiddleware, async (req, res) => {
     try {
         const query = `
             SELECT c.nome_cidades, e.nome_estado 
@@ -118,7 +118,7 @@ router.get('/cidade/estados', async (req, res) => {
  *       201:
  *         description: Cidade criada com sucesso.
  */
-router.post('/cidade/', async (req, res) => {
+router.post('/cidade/', authMiddleware,async (req, res) => {
     try {
         const { nome_cidades, estado_id } = req.body;
 
@@ -155,7 +155,7 @@ router.post('/cidade/', async (req, res) => {
  *       200:
  *         description: Cidade excluída com sucesso.
  */
-router.delete('/cidade/', async (req, res) => {
+router.delete('/cidade/',authMiddleware, async (req, res) => {
     try {
         const { id_cidade } = req.body;
 
@@ -197,7 +197,7 @@ router.delete('/cidade/', async (req, res) => {
  *       200:
  *         description: Cidade alterada com sucesso.
  */
-router.put('/cidade/', async (req, res) => {
+router.put('/cidade/', authMiddleware,async (req, res) => {
     try {
         const { nome_cidade , id_cidade } = req.body;
 

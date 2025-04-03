@@ -1,6 +1,6 @@
 import express from 'express';
 import connection from '../Database.js';
-
+import {authMiddleware} from './authuser.js'
 const router = express.Router();
 const isEmpty = (value) => !value || value.toString().trim() === '';
 
@@ -38,7 +38,7 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de quantidades retornada com sucesso.
  */
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware,async (req, res) => {
     try {
         const query = `SELECT * FROM Quantidades`;
         const result = await connection.query(query);
@@ -70,7 +70,7 @@ router.get('/', async (req, res) => {
  *       201:
  *         description: Quantidade inserida com sucesso.
  */
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware,async (req, res) => {
     try {
         const { quantidade, estoque_id } = req.body;
 
@@ -107,7 +107,7 @@ router.post('/', async (req, res) => {
  *       200:
  *         description: Quantidade excluída com sucesso.
  */
-router.delete('/', async (req, res) => {
+router.delete('/',authMiddleware, async (req, res) => {
     try {
         const { id_quantidade } = req.body;
 
@@ -152,7 +152,7 @@ router.delete('/', async (req, res) => {
  *       200:
  *         description: Quantidade atualizada com sucesso.
  */
-router.put('/', async (req, res) => {
+router.put('/',authMiddleware, async (req, res) => {
     try {
         const { estoque_id, quantidade } = req.body;
         console.log(estoque_id, quantidade)

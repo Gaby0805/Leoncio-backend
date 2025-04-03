@@ -1,6 +1,6 @@
 import express from 'express';
 import connection from '../Database.js';
-
+import {authMiddleware} from './authuser.js'
 const router = express.Router();
 const isEmpty = (value) => !value || value.toString().trim() === '';
 
@@ -38,7 +38,7 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de materiais retornada com sucesso.
  */
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware,async (req, res) => {
     try {
         const query = `SELECT * FROM Estoque`;
         const result = await connection.query(query);
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
  *       200:
  *         description: Lista de materiais retornada com sucesso.
  */
-router.get('/valores', async (req, res) => {
+router.get('/valores',authMiddleware, async (req, res) => {
     try {
         const id_estoque = req.body
         const query = `SELECT * FROM Estoque where id_estoque = ?`;
@@ -84,7 +84,7 @@ router.get('/valores', async (req, res) => {
  *       200:
  *         description: Lista de quantidades com detalhes do estoque retornada com sucesso.
  */
-router.get('/ComodatoList', async (req, res) => {
+router.get('/ComodatoList',authMiddleware, async (req, res) => {
     try {
         const query = `
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
@@ -111,7 +111,7 @@ router.get('/ComodatoList', async (req, res) => {
  *       200:
  *         description: Lista de quantidades com detalhes do estoque retornada com sucesso.
  */
-router.get('/ComodatoListtext', async (req, res) => {
+router.get('/ComodatoListtext',authMiddleware, async (req, res) => {
     try {
         const query = `
         SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
@@ -141,13 +141,12 @@ router.get('/ComodatoListtext', async (req, res) => {
  *       200:
  *         description: Lista de quantidades com detalhes do estoque retornada com sucesso.
  */
-router.get('/lions', async (req, res) => {
+router.get('/lions',authMiddleware, async (req, res) => {
     try {
         const query = `
             SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
             FROM Quantidades q
             RIGHT JOIN Estoque e ON q.estoque_id = e.id_estoque
-            where e.area_material = 'Lions'
         `;
         const result = await connection.query(query);
         res.json(result.rows);
@@ -190,7 +189,7 @@ router.get('/lions', async (req, res) => {
  *         description: Material inserido com sucesso.
  */
 
-router.post('/', async (req, res) => {
+router.post('/',authMiddleware, async (req, res) => {
     try {
         const { nome_material, descricao, valor, status, area_material, aquisicao, tamanho } = req.body;
 
@@ -227,7 +226,7 @@ router.post('/', async (req, res) => {
  *       200:
  *         description: Material excluído com sucesso.
  */
-router.delete('/', async (req, res) => {
+router.delete('/',authMiddleware, async (req, res) => {
     try {
         const { id_estoque } = req.body;
 
@@ -282,7 +281,7 @@ router.delete('/', async (req, res) => {
  *       200:
  *         description: Material atualizado com sucesso.
  */
-router.put('/', async (req, res) => {
+router.put('/',authMiddleware, async (req, res) => {
     try {
         const { estoque_id, nome_material, descricao,  status, tamanho } = req.body;
 

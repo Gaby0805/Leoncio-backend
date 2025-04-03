@@ -2,7 +2,7 @@
 import express from 'express';
 import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
-
+import {authMiddleware} from './authuser.js'
 const router = express.Router();
 
 /**
@@ -40,7 +40,7 @@ router.get('/teste', (req, res) => {
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
-router.get('/transacao', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const query = 'SELECT * FROM emprestimo';
         const result = await connection.query(query);
@@ -60,7 +60,7 @@ router.get('/transacao', async (req, res) => {
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
-router.get('/transacao/ativos', async (req, res) => {
+router.get('/ativos',authMiddleware, async (req, res) => {
     try {
         const query = 'SELECT * FROM emprestimo where status = ativo';
         const result = await connection.query(query);
@@ -69,6 +69,30 @@ router.get('/transacao/ativos', async (req, res) => {
         res.status(500).json({ Error: err.message });
     }
 });
+
+/**
+ * @swagger
+ * /transacao/info:
+ *   get:
+ *     summary: Lista todos as transação
+ *     description: Retorna todo as transações
+ *     tags: [transacao]
+ *     responses:
+ *       200:
+ *         description: Lista de estados retornada com sucesso.
+ */
+router.get('/info',authMiddleware, async (req, res) => {
+    try {
+        const selectQuery = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque";
+        const result = await connection.query(selectQuery);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ Error: err.message });
+    }
+});
+
+
+
 /**
  * @swagger
  * /transacao/concluidos:
@@ -80,7 +104,7 @@ router.get('/transacao/ativos', async (req, res) => {
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
-router.get('/transacao/concluidos', async (req, res) => {
+router.get('/concluidos',authMiddleware, async (req, res) => {
     try {
         const query = 'SELECT * FROM emprestimo where status = concluidos';
         const result = await connection.query(query);
@@ -100,7 +124,7 @@ router.get('/transacao/concluidos', async (req, res) => {
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
-router.get('/transacao/concluidos', async (req, res) => {
+router.get('/concluidos',authMiddleware, async (req, res) => {
     try {
         const query = 'SELECT * FROM emprestimo where status = concluidos';
         const result = await connection.query(query);
@@ -139,7 +163,7 @@ router.get('/transacao/concluidos', async (req, res) => {
  *       201:
  *         description: Transação criada com sucesso.
  */
-router.post('/', async (req, res) => {
+router.post('/',authMiddleware, async (req, res) => {
     try {
         const { comodato_id, user_id, estoque_id } = req.body;
 
@@ -186,5 +210,47 @@ router.post('/', async (req, res) => {
         res.status(500).json({ Error: error.message});
     }
 });
+
+
+/**
+ * @swagger
+ * /transacao/select:
+ *   post:
+ *     summary: seleciona items 
+ *     description: Adiciona uma nova transação ao banco de dados.
+ *     tags: [transacao]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome_user:
+ *                 type: string
+ *               nome_comodato:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *               data_limite:
+ *                 type: string   
+ *     responses:
+ *       201:
+ *         description: Transação criada com sucesso.
+ */
+router.post('/select',authMiddleware, async (req, res) => {
+    try {
+        const { nome_user, status, nome_comodato, data_limite} = req.body;
+        const inner = "inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque"
+        const where = "where status = $1 and nome_user = $2 and nome_comodato = $3 and data_limite = $4"
+        const query = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite from emprestimo e " + inner + where;
+        const result = await connection.query(query, status, nome_user, nome_comodatom, data_limite);
+        res.status(201).json({ message: "selected items", material: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ Error: error.message });
+    }
+});
+
+
 
 export default router;

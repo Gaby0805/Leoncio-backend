@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import setupSwagger from './swagger.js'; // Importando o Swaggerimport swaggerdocs from './swagger.js'
 import connection from './Database.js';
+import cookieParser from 'cookie-parser';
 
 // import rotas 
 import locaisRoutes from './routes/locais.js';
@@ -21,10 +22,10 @@ async function reagendarEmails() {
       SELECT e.data_limite, c.nome_comodato, c.sobrenome_comodato
       FROM emprestimo e
       INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato
-      WHERE e.data_limite >= CURRENT_DATE;
+      WHERE e.status = 'Ativo';
     `);
 
-    rows.forEach((emprestimo) => {scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobreno)});
+    rows.forEach((emprestimo) => {scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato)});
   } catch (error) {
     console.error('Erro ao reagendar e-mails:', error);
   }
@@ -37,8 +38,8 @@ reagendarEmails();
 const app = express();
 const port = 3333;
 setupSwagger(app)
-
-app.use(cors());
+app.use(cookieParser());  // Adiciona o parser de cookies
+app.use(cors({credentials:true}));
 app.use(bodyParser.json());
 // Estado e Cidade
 app.use('/locais', locaisRoutes);
@@ -54,7 +55,10 @@ app.use('/estoque', estoqueRoutes);
 app.use('/transacao', transacaoRoutes);
 // Estoque e quantidade
 app.use('/quantidades', quantidadeRoutes);
+// auth de usuario
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
   console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
+
 });
