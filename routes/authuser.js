@@ -15,7 +15,7 @@ export function validationLogin(id_user) {
     console.log("Passo 5: Gerando token...");
     
     try {
-        const token = jwt.sign({ id: id_user }, SECRET_WORD, { expiresIn: "1h" });
+        const token = jwt.sign({ id: id_user }, SECRET_WORD, { expiresIn: "1d" });
         console.log(token)
         console.log("Passo 6: Token gerado com sucesso!");
         return token;
@@ -36,11 +36,11 @@ export function authMiddleware(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, SECRET_WORD);
-        console.log("✅ Token decodificado:", decoded);
+        console.log("✅ Token decodificado:");
         req.user = decoded;
         next();
     } catch (error) {
-        console.log("❌ Erro ao verificar token:", error.message);
+        console.log("❌ Erro ao verificar token:", error.messagem);
         return res.status(401).json({ message: 'Token inválido' });
     }
 }
