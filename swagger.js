@@ -25,8 +25,8 @@ const swaggerDefinition = {
 
 servers: [
         {
-            url: 'http://localhost:3333',
-            description: 'Servidor Local',
+            url: 'https://leoncio-backend.onrender.com/',
+            description: 'Servidor online',
         },
     ],
 };

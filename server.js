@@ -40,7 +40,11 @@ const app = express();
 const port = 3333;
 setupSwagger(app)
 app.use(cookieParser());  // Adiciona o parser de cookies
-app.use(cors({credentials:true}));
+app.use(cors({
+  origin: 'https://leoncio-front-cxgg.vercel.app/', // ou a URL do seu front no Render
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 // Estado e Cidade
 app.use('/locais', locaisRoutes);
@@ -58,8 +62,8 @@ app.use('/transacao', transacaoRoutes);
 app.use('/quantidades', quantidadeRoutes);
 // auth de usuario
 
-app.listen(port,'0.0.0.0' ,() => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-  console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
+app.listen(port ,() => {
+  console.log(`Servidor rodando em http://https://leoncio-backend.onrender.com`);
+  console.log(`Servidor de documentos rodando em https://leoncio-backend.onrender.com/api-docs`);
 
 });
