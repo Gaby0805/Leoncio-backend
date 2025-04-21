@@ -110,57 +110,74 @@ router.get('/info', authMiddleware,async (req, res) => {
  *       201:
  *         description: comodato criado com sucesso.
  */
-router.post('/', authMiddleware,async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
     try {
-        const {
-            nome,
-            sobrenome,
-            cpf,
-            rg,
-            cep,
-            profissao,
-            estado_civil,
-            rua,
-            numero_casa,
-            complemento,
-            telefone,
-            cidade_id
-        } = req.body;
-
-        if (
-            !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
-            !rua || !numero_casa || !telefone || !cidade_id
-        ) {
-            return res.status(400).json({ error: "Todos os campos são obrigatórios." });
-        }
-
-        // Chama a função para inserir os dados
-        const insertQuery = `
-            select insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
-        `;
-        await connection.query(insertQuery, [
-            nome, sobrenome, cpf, rg, cep, profissao, estado_civil,
-            rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id
-        ]);
-
-        // Busca o ID do último registro inserido
-        const idQuery = `
-            SELECT id_comodato FROM Pessoas_Comodato 
-            WHERE cpf = $1 ORDER BY id_comodato DESC LIMIT 1;
-        `;
-        const result = await connection.query(idQuery, [cpf]);
-
-        const novoId = result.rows[0]?.id_comodato;
-
-        res.status(201).json({
-            message: "Comodato inserido com sucesso!",
-            id_comodato: novoId
+      const {
+        nome,
+        sobrenome,
+        cpf,
+        rg,
+        cep,
+        profissao,
+        estado_civil,
+        rua,
+        numero_casa,
+        complemento,
+        telefone,
+        cidade_id
+      } = req.body;
+  
+      if (
+        !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
+        !rua || !numero_casa || !telefone || !cidade_id
+      ) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+      }
+  
+      // Verifica se CPF já existe
+      const checkCpfQuery = `
+        SELECT id_comodato FROM Pessoas_Comodato WHERE cpf = $1;
+      `;
+      const cpfResult = await connection.query(checkCpfQuery, [cpf]);
+  
+      let idComodato;
+  
+      if (cpfResult.rows.length > 0) {
+        // CPF já existe, pega o ID
+        idComodato = cpfResult.rows[0].id_comodato;
+  
+        return res.status(200).json({
+          message: "CPF já estava cadastrado.",
+          id_comodato: idComodato
         });
+      }
+  
+      // CPF não existe, insere nova pessoa
+      const insertQuery = `
+        SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+      `;
+      await connection.query(insertQuery, [
+        nome, sobrenome, cpf, rg, cep, profissao, estado_civil,
+        rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id
+      ]);
+  
+      const idQuery = `
+        SELECT id_comodato FROM Pessoas_Comodato 
+        WHERE cpf = $1 ORDER BY id_comodato DESC LIMIT 1;
+      `;
+      const result = await connection.query(idQuery, [cpf]);
+      idComodato = result.rows[0]?.id_comodato;
+  
+      res.status(201).json({
+        message: "Comodato inserido com sucesso!",
+        id_comodato: idComodato
+      });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+      console.error("Erro no cadastro:", error);
+      res.status(500).json({ error: error.message });
     }
-});
-
+  });
+  
 /**
  * @swagger
  * /comodato:
