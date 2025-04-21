@@ -232,7 +232,11 @@ router.post('/autenticar', async (req, res) => {
                 try {
                     const token = validationLogin(user.id_user);
                     console.log("Passo 3");
-                    res.cookie('token', token, { httpOnly: true, secure: IN_PROD, sameSite: 'none', maxAge: 24 * 60 * 60 * 1000   })
+                    res.cookie('token', token, {
+                        httpOnly: true,
+                        secure: IN_PROD,                    // em produção exige HTTPS
+                        sameSite: IN_PROD ? 'none' : 'lax', // none+secure em prod; lax no dev
+                        maxAge: 24 * 60 * 60 * 1000   })
                     console.log('cookie enviado',res.getHeader('Set-Cookie'))
                     res.status(201).json({ success: true, message: "Logado", id_usuario: user.id_user});
                 } catch (err) {
