@@ -16,7 +16,7 @@ import transacaoRoutes from './routes/transacao.js';
 import scheduleEmail from './tasks/organize.js';
 
 
-async function reagendarEmails() {
+async function reagendarEmails() { 
   try {
     const { rows } = await connection.query(`
       SELECT e.data_limite, c.nome_comodato, c.sobrenome_comodato
@@ -24,7 +24,7 @@ async function reagendarEmails() {
       INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato
       WHERE e.status = 'Ativo';
     `);
-
+    
     rows.forEach((emprestimo) => {scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato)});
   } catch (error) {
     console.error('Erro ao reagendar e-mails:', error);

@@ -83,7 +83,7 @@ router.get('/ativos',authMiddleware, async (req, res) => {
  */
 router.get('/info',authMiddleware, async (req, res) => {
     try {
-        const selectQuery = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque";
+        const selectQuery = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite, e.id_emprestimo from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque ";
         const result = await connection.query(selectQuery);
         res.json(result.rows);
     } catch (err) {
@@ -121,6 +121,7 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  *     description: Retorna todo as transações
  *     tags: [transacao]
  *     responses:
+ * 
  *       200:
  *         description: Lista de estados retornada com sucesso.
  */
@@ -149,7 +150,7 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               comodato_id:
+ *               cpf:
  *                 type: integer
  *               user_id:
  *                 type: integer
@@ -157,20 +158,31 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  *                 type: array
  *                 items:
  *                   type: integer
- *               status:
- *                 type: string
+
  *     responses:
  *       201:
  *         description: Transação criada com sucesso.
  */
 router.post('/',authMiddleware, async (req, res) => {
     try {
-        const { comodato_id, user_id, estoque_id } = req.body;
+        const {  cpf ,user_id, estoque_id } = req.body;
 
-        if (!comodato_id || !user_id || !estoque_id || !Array.isArray(estoque_id) || estoque_id.length === 0) {
+        if ( !user_id || !estoque_id || !Array.isArray(estoque_id) || estoque_id.length === 0) {
             return res.status(400).json({ Error: "Os campos são obrigatórios e estoque_id deve ser uma lista com pelo menos um item." });
         }
+        const idQuery = `
+        SELECT id_comodato FROM Pessoas_Comodato 
+        WHERE cpf = $1 ;
+     `;
+        const resulte = await connection.query(idQuery, [cpf]);
 
+        if (resulte.rowCount ===0) {
+            return res.status(400).json({ Error: `não foi possivel trazer o usuario` });
+
+        }
+
+        const id_como = resulte.rows[0]?.id_comodato
+        console.log(id_como)
         const insertQuery = "INSERT INTO emprestimo (comodato_id, user_id, estoque_id, status) VALUES ($1, $2, $3, $4) RETURNING *";
         const updateQuery = "UPDATE Quantidades SET quantidade = quantidade - 1 WHERE estoque_id = $1 AND quantidade > 0 RETURNING quantidade";
         const selectQuery = "select c.nome_comodato,c.sobrenome_comodato,e.comodato_id, e.data_limite from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato where e.comodato_id = $1";
@@ -183,22 +195,26 @@ router.post('/',authMiddleware, async (req, res) => {
                 return res.status(400).json({ Error: `Estoque insuficiente para o item ${id}.` });
             }
 
-            const result = await connection.query(insertQuery, [comodato_id, user_id, id, 'Ativo']);
+            const result = await connection.query(insertQuery, [id_como, user_id, id, 'Ativo']);
             results.push(result.rows[0]);
         }
 
 
-
-        const resultado = await connection.query(selectQuery, [comodato_id])
+        console.log('passou aqui')
+        const resultado = await connection.query(selectQuery, [id_como])
         if (resultado.rowCount === 0) {
             console.log(resultado.rows[0])
+            console.log('passou aqui 2')
+
             return res.status(400).json({Error: 'N foi possivel agendar o usuario'})
         } 
         const {nome_comodato, sobrenome_comodato, data_limite} = resultado.rows[0]
 
-        
+        console.log('passou aqui3')
+
         try{
             scheduleEmail( data_limite, nome_comodato, sobrenome_comodato)
+            console.log('passou aqui4')
 
         }
         catch (err) {
@@ -207,6 +223,8 @@ router.post('/',authMiddleware, async (req, res) => {
 
         res.status(201).json({ message: "Transações inseridas com sucesso!", transacoes: results });
     } catch (error) {
+        console.log('passou erro')
+
         res.status(500).json({ Error: error.message});
     }
 });
@@ -245,6 +263,36 @@ router.post('/select',authMiddleware, async (req, res) => {
         const where = "where status = $1 and nome_user = $2 and nome_comodato = $3 and data_limite = $4"
         const query = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite from emprestimo e " + inner + where;
         const result = await connection.query(query, status, nome_user, nome_comodatom, data_limite);
+        res.status(201).json({ message: "selected items", material: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ Error: error.message });
+    }
+});
+/**
+ * @swagger
+ * /transacao/status:
+ *   put:
+ *     summary: altera o status
+ *     description: Adiciona uma nova transação ao banco de dados.
+ *     tags: [transacao]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_emprestimo:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Transação alteradacom sucesso.
+ */
+router.put('/status',authMiddleware, async (req, res) => {
+    try {
+        const { id_emprestimo  }  = req.body;
+        const query = "UPDATE emprestimo SET status = 'Concluido' WHERE id_emprestimo  = $1";
+        const result = await connection.query(query,[id_emprestimo ] );
         res.status(201).json({ message: "selected items", material: result.rows[0] });
     } catch (error) {
         res.status(500).json({ Error: error.message });
