@@ -163,7 +163,7 @@ router.post('/especifico',authMiddleware, async (req, res) => {
  *       201:
  *         description: usuario criada com sucesso.
  */
-router.post('/',authMiddleware,async (req, res) => {
+router.post('/',async (req, res) => {
     try { //O tipo de usuario se é adm ou normal
         const { u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo  } = req.body;
 

@@ -35,6 +35,7 @@ async function reagendarEmails() {
 reagendarEmails();
 
 
+
 const app = express();
 const port = 3333;
 setupSwagger(app)
@@ -57,7 +58,7 @@ app.use('/transacao', transacaoRoutes);
 app.use('/quantidades', quantidadeRoutes);
 // auth de usuario
 
-app.listen(port, () => {
+app.listen(port,'0.0.0.0' ,() => {
   console.log(`Servidor rodando em http://localhost:${port}`);
   console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
 

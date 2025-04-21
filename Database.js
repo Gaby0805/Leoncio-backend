@@ -1,28 +1,30 @@
+// Importando 'pg' com compatibilidade CommonJS
 import pkg from 'pg';
-import dotenv from 'dotenv';
+const { Pool } = pkg;
 
+import dotenv from 'dotenv';
 dotenv.config();
 
-const { Pool } = pkg; // Importando Pool corretamente
-// Criando uma nova conexão com o banco de dados
+// Criando o pool de conexões
 const connection = new Pool({
-    user: process.env.USER,
-    host: process.env.HOST,
-    database: process.env.NAME,
-    password: process.env.PASSWORD,
-    port: 5432
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // necessário para conexões seguras (como Supabase)
+  },
 });
 
-const gettime = async () => {
-    try {
-        const res = await connection.query('SELECT');
-        console.log(res.rows);
-    } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-    }
+// Teste simples: buscar o horário atual do banco
+const getTime = async () => {
+  try {
+    const res = await connection.query('SELECT NOW()');
+    console.log('Horário atual do banco:', res.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar dados:', error);
+  }
 };
 
-// Executa a função de teste
-gettime();
+// Executar o teste (você pode remover se quiser)
+getTime();
 
+// Exportar o pool para uso em outras partes da aplicação
 export default connection;
