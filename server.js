@@ -41,10 +41,9 @@ const port = 3333;
 setupSwagger(app)
 app.use(cookieParser());  // Adiciona o parser de cookies
 app.use(cors({
-  origin: 'https://leoncio-front-cxgg.vercel.app/', // ou a URL do seu front no Render
+  origin: 'https://leoncio-front-cxgg.vercel.app', // sem barra no final!
   credentials: true
 }));
-
 app.use(bodyParser.json());
 // Estado e Cidade
 app.use('/locais', locaisRoutes);
