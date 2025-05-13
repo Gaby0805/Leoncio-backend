@@ -8,9 +8,7 @@ dotenv.config();
 // Criando o pool de conexões
 const connection = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // necessário para conexões seguras (como Supabase)
-  },
+  ssl: false
 });
 
 // Teste simples: buscar o horário atual do banco

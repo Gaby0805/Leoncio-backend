@@ -350,6 +350,155 @@ router.put('/',authMiddleware, async (req, res) => {
     }
 });
 
+
+/**
+ * @swagger
+ * /usuario/senha:
+ *   put:
+ *     summary: Altera a senha do usuário
+ *     description: Altera a senha do banco de dados pelo ID do usuário.
+ *     tags: [usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_usuario:
+ *                 type: integer
+ *               senha_antiga:
+ *                 type: string
+ *               senha_nova:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Senha alterada com sucesso.
+ *       400:
+ *         description: Campos obrigatórios não preenchidos.
+ *       401:
+ *         description: Senha antiga incorreta.
+ *       404:
+ *         description: Usuário não encontrado.
+ *       500:
+ *         description: Erro interno no servidor.
+ */
+
+router.put('/senha', authMiddleware, async (req, res) => {
+    try {
+      const { id_usuario, senha_antiga, senha_nova } = req.body;
+  
+      // Verifica se todos os campos estão presentes
+      if (!id_usuario || !senha_antiga || !senha_nova) {
+        return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
+      }
+  
+      // Query para buscar a senha do usuário
+      const query = "SELECT senha FROM usuarios WHERE id_user = $1";
+      const result = await connection.query(query, [id_usuario]);
+  
+      if (result.rowCount === 0) {
+        return res.status(404).json({ Error: "Usuário não encontrado." });
+      }
+  
+      const user = result.rows[0];
+  
+      // Verifica se a senha antiga corresponde
+      const verify = await bcrypt.compare(senha_antiga, user.senha);
+      if (!verify) {
+        return res.status(401).json({ Error: "Senha antiga incorreta." });
+      }
+  
+      // Hash da nova senha
+      const hashedPassword = await bcrypt.hash(senha_nova, 10);
+  
+      // Atualiza a senha no banco de dados
+      const updateQuery = "UPDATE usuarios SET senha = $1 WHERE id_user = $2";
+      await connection.query(updateQuery, [hashedPassword, id_usuario]);
+  
+      // Retorna sucesso
+      res.status(200).json({ message: "Senha alterada com sucesso!" });
+  
+    } catch (error) {
+      res.status(500).json({ Error: error.message });
+    }
+  });
+
+/**
+ * @swagger
+ * /usuario/esqueceusenha:
+ *   put:
+ *     summary: Altera a senha do usuário
+ *     description: Altera a senha do banco de dados pelo ID do usuário.
+ *     tags: [usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_usuario:
+ *                 type: integer
+ *               id_adm:
+ *                 type: integer
+ *               senha_adm:
+ *                 type: string
+ *               senha_nova:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Senha alterada com sucesso.
+ *       400:
+ *         description: Campos obrigatórios não preenchidos.
+ *       401:
+ *         description: Senha antiga incorreta.
+ *       404:
+ *         description: Usuário não encontrado.
+ *       500:
+ *         description: Erro interno no servidor.
+ */
+
+router.put('/esqueceusenha', authMiddleware, async (req, res) => {
+    try {
+      const { id_usuario,id_adm, senha_adm, senha_nova } = req.body;
+        console.log(id_usuario,id_adm, senha_adm, senha_nova)
+      // Verifica se todos os campos estão presentes
+      if (!id_usuario || !senha_adm || !senha_nova || !id_adm  ) {
+        return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
+      }
+  
+      // Query para buscar a senha do usuário
+      const query = "SELECT senha FROM usuarios WHERE id_user = $1";
+      const result = await connection.query(query, [id_adm]);
+  
+      if (result.rowCount === 0) {
+        return res.status(404).json({ Error: "Usuário não encontrado." });
+      }
+  
+      const user = result.rows[0];
+  
+      // Verifica se a senha antiga corresponde
+      const verify = await bcrypt.compare(senha_adm, user.senha);
+      if (!verify) {
+        return res.status(401).json({ Error: "Senha adm incorreta." });
+      }
+  
+      // Hash da nova senha
+      const hashedPassword = await bcrypt.hash(senha_nova, 10);
+  
+      // Atualiza a senha no banco de dados
+      const updateQuery = "UPDATE usuarios SET senha = $1 WHERE id_user = $2";
+      await connection.query(updateQuery, [hashedPassword, id_usuario]);
+  
+      // Retorna sucesso
+      res.status(200).json({ message: "Senha alterada com sucesso!" });
+  
+    } catch (error) {
+      res.status(500).json({ Error: error.message });
+    }
+  });
+
 /**
  * @swagger
  * /usuario/tipo:

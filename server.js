@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import setupSwagger from './swagger.js'; // Importando o Swaggerimport swaggerdocs from './swagger.js'
+import setupSwagger from './swagger.js'; // Importando o Swagger
 import connection from './Database.js';
 import cookieParser from 'cookie-parser';
 
@@ -15,8 +15,8 @@ import quantidadeRoutes from './routes/quantidade.js';
 import transacaoRoutes from './routes/transacao.js';
 import scheduleEmail from './tasks/organize.js';
 
-
-async function reagendarEmails() { 
+// Função para reagendar e-mails (exemplo de uso do banco de dados)
+async function reagendarEmails() {
   try {
     const { rows } = await connection.query(`
       SELECT e.data_limite, c.nome_comodato, c.sobrenome_comodato
@@ -25,7 +25,9 @@ async function reagendarEmails() {
       WHERE e.status = 'Ativo';
     `);
     
-    rows.forEach((emprestimo) => {scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato)});
+    rows.forEach((emprestimo) => {
+      scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
+    });
   } catch (error) {
     console.error('Erro ao reagendar e-mails:', error);
   }
@@ -34,35 +36,34 @@ async function reagendarEmails() {
 // Chamamos essa função ao iniciar o servidor
 reagendarEmails();
 
-
-
 const app = express();
 const port = 3333;
-setupSwagger(app)
-app.use(cookieParser());  // Adiciona o parser de cookies
+setupSwagger(app);
+
+app.use(cookieParser()); // Adiciona o parser de cookies
+
+// CORS: Configuração para desenvolvimento local e produção
+const IN_PROD = process.env.NODE_ENV === 'production';
+const frontendOrigin = IN_PROD ? 'https://leoncio-front-cxgg.vercel.app' : 'http://localhost:3000';
+
 app.use(cors({
-  origin: 'https://leoncio-front-cxgg.vercel.app', // sem barra no final!
-  credentials: true
+  origin: frontendOrigin, // Permite tanto o frontend local quanto o externo
+  credentials: true // Permite o envio de cookies
 }));
+
 app.use(bodyParser.json());
-// Estado e Cidade
+
+// Rotas
 app.use('/locais', locaisRoutes);
-// Usuário padrão 
 app.use('/usuario', usuariosRoutes);
-// Aniversariante
 app.use('/aniversariante', aniversarianteRoutes);
-// Pessoa comodato
 app.use('/comodato', comodatoRoutes);
-// Estoque e quantidade
 app.use('/estoque', estoqueRoutes);
-// Estoque e quantidade
 app.use('/transacao', transacaoRoutes);
-// Estoque e quantidade
 app.use('/quantidades', quantidadeRoutes);
-// auth de usuario
 
-app.listen(port ,() => {
-  console.log(`Servidor rodando em http://https://leoncio-backend.onrender.com`);
-  console.log(`Servidor de documentos rodando em https://leoncio-backend.onrender.com/api-docs`);
-
+// Iniciando o servidor
+app.listen(port, () => {
+  console.log(`Servidor rodando em http://localhost:${port}`); // Log para o desenvolvimento local
+  console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
 });
