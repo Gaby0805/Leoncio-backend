@@ -65,5 +65,6 @@ app.use('/quantidades', quantidadeRoutes);
 // Iniciando o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`); // Log para o desenvolvimento local
+  console.log(`Servidor online rodando em https://leoncio-backend-production.up.railway.app/`); // Log para o desenvolvimento local
   console.log(`Servidor de documentos rodando em http://localhost:${port}/api-docs`);
 });

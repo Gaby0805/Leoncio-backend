@@ -25,7 +25,7 @@ const swaggerDefinition = {
 
 servers: [
         {
-            url: 'http://localhost:3333',
+            url: 'leoncio-backend-production.up.railway.app',
             description: 'Servidor online',
         },
     ],
