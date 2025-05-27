@@ -44,7 +44,7 @@ app.use(cookieParser()); // Adiciona o parser de cookies
 
 // CORS: Configuração para desenvolvimento local e produção
 const IN_PROD = process.env.NODE_ENV === 'production';
-const frontendOrigin = IN_PROD ? 'https://leoncio-front-cxgg.vercel.app' : 'http://localhost:3000';
+const frontendOrigin = IN_PROD ? 'https://leoncio-front-m5n7.vercel.app/' : 'http://localhost:3000';
 
 app.use(cors({
   origin: frontendOrigin, // Permite tanto o frontend local quanto o externo
