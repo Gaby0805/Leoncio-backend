@@ -34,7 +34,7 @@ async function reagendarEmails() {
 }
 
 // Chamamos essa função ao iniciar o servidor
-reagendarEmails();
+// reagendarEmails();
 
 const app = express();
 const port = 3333;

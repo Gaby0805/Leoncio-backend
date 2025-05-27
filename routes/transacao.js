@@ -4,6 +4,15 @@ import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
 import {authMiddleware} from './authuser.js'
 const router = express.Router();
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 /**
  * @swagger
@@ -133,6 +142,168 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
     } catch (err) {
         res.status(500).json({ Error: err.message });
     }
+});
+/**
+ * @swagger
+ * /transacao/doc:
+ *   post:
+ *     summary: Gera um documento .docx de comodato
+ *     description: Gera um documento preenchido com os dados do comodato, do usuário responsável e dos itens emprestados.
+ *     tags: [transacao]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: ID do comodato (id_comodato)
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: Documento gerado com sucesso.
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Requisição inválida ou comodato não encontrado.
+ *       401:
+ *         description: Não autorizado. Token de autenticação ausente ou inválido.
+ *       500:
+ *         description: Erro interno ao gerar o documento.
+ */
+
+router.post("/doc", authMiddleware,async (req, res) => {
+  const hoje = new Date();
+  const dataFormatada = hoje.toLocaleDateString("pt-BR");
+
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID do comodato é obrigatório." });
+    }
+
+    // 1. Buscar dados do comodato, cidade e estado
+    const comodatoQuery = `
+      SELECT 
+        pc.id_comodato,
+        pc.nome_comodato,
+        pc.sobrenome_comodato,
+        pc.cpf,
+        pc.rg,
+        pc.cep,
+        pc.profissao,
+        pc.estado_civil,
+        pc.rua,
+        pc.bairro,
+        pc.numero_casa,
+        pc.complemento,
+        pc.nacionalidade,
+        pc.numero_telefone,
+        c.nome_cidades AS cidade,
+        e.nome_estado AS estado
+      FROM Pessoas_Comodato pc
+      JOIN Cidades c ON pc.cidade_id = c.id_cidade
+      JOIN Estados e ON c.estado_id = e.id_estado
+      WHERE pc.id_comodato = $1;
+    `;
+
+    const comodatoResult = await connection.query(comodatoQuery, [id]);
+    if (comodatoResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comodato não encontrado." });
+    }
+
+    const comodato = comodatoResult.rows[0];
+
+    // 2. Buscar nome do usuário que criou o comodato (um dos usuários)
+    const usuarioQuery = `
+      SELECT u.nome_user, u.sobrenome_user
+      FROM Emprestimo emp
+      JOIN Usuarios u ON emp.user_id = u.id_user
+      WHERE emp.comodato_id = $1
+      LIMIT 1;
+    `;
+    const usuarioResult = await connection.query(usuarioQuery, [id]);
+    const usuario = usuarioResult.rows[0] || { nome_user: "Desconhecido", sobrenome_user: "" };
+
+    // 3. Buscar itens emprestados
+    const itensQuery = `
+      SELECT est.nome_material, est.descricao, est.tamanho
+      FROM Emprestimo emp
+      JOIN Estoque est ON emp.estoque_id = est.id_estoque
+      WHERE emp.comodato_id = $1;
+    `;
+    const itensResult = await connection.query(itensQuery, [id]);
+    const itens = itensResult.rows;
+
+    // 4. Carregar e preencher o template
+const filePath = path.join(__dirname, "..", "template", "modelo.docx");
+    const content = await fs.readFile(filePath);
+    const zip = new PizZip(content);
+
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    // 5. Montar objeto com os dados
+    const dados = {
+      nome: comodato.nome_comodato,
+      sobrenome: comodato.sobrenome_comodato,
+      CPF: comodato.cpf,
+      RG: comodato.rg,
+      CEP: comodato.cep,
+      profissao: comodato.profissao,
+      estado_civil: comodato.estado_civil,
+      rua: comodato.rua,
+      numero: comodato.numero_casa,
+      complemento: comodato.complemento,
+      telefone: comodato.numero_telefone,
+      bairro: comodato.bairro,
+      nacionalidade: comodato.nacionalidade,
+      cidade: comodato.cidade,
+      estado: comodato.estado,
+      nome_usuario: usuario.nome_user,
+      nome_comodato: comodato.nome_comodato,
+      data_hoje: dataFormatada,
+      items: itens.map(item => ({
+        nome_item: item.nome_material,
+        descricao: item.descricao,
+        tamanho: item.tamanho
+      })),
+    };
+
+    doc.setData(dados);
+
+    try {
+      doc.render();
+    } catch (error) {
+      console.error("Erro ao renderizar o DOCX:", error);
+      return res.status(500).json({ error: "Erro ao preencher o documento" });
+    }
+
+    const buffer = doc.getZip().generate({ type: "nodebuffer" });
+
+    res.set({
+      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "Content-Disposition": `attachment; filename=comodato_${id}.docx`,
+    });
+
+    return res.send(buffer);
+
+  } catch (error) {
+    console.error("Erro ao gerar documento:", error);
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 

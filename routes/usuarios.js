@@ -51,6 +51,26 @@ router.get('/',authMiddleware, async (req, res) => {
 });
 /**
  * @swagger
+ * /usuario/ativos:
+ *   get:
+ *     summary: Listar usuarios ativos
+ *     description: Retorna todos os usuarios ativos 
+ *     tags: [usuarios]
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios  retornada com sucesso.
+ */
+router.get('/ativos',authMiddleware, async (req, res) => {
+    try {
+        const query = `select * from usuarios where tipo_user != 'inativo'`;
+        const result = await connection.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ Error: error.message });
+    }
+});
+/**
+ * @swagger
  * /usuario/gettoken:
  *   get:
  *     summary: pega um token
@@ -61,7 +81,7 @@ router.get('/',authMiddleware, async (req, res) => {
  *         description: Lista de usuarios  retornada com sucesso.
  */
 router.get('/gettoken',authMiddleware, async (req, res) => {
-    try {
+    try {   
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ Error: error.message });

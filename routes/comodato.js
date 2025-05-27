@@ -106,11 +106,13 @@ router.get('/info', authMiddleware,async (req, res) => {
  *                 type: string
  *               cidade_id:
  *                 type: integer
+ *               bairro:
+ *                 type: string
  *     responses:
  *       201:
  *         description: comodato criado com sucesso.
  */
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', async (req, res) => {
     try {
       const {
         nome,
@@ -121,6 +123,7 @@ router.post('/', authMiddleware, async (req, res) => {
         profissao,
         estado_civil,
         rua,
+        bairro,
         numero_casa,
         complemento,
         telefone,
@@ -129,7 +132,7 @@ router.post('/', authMiddleware, async (req, res) => {
   
       if (
         !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
-        !rua || !numero_casa || !telefone || !cidade_id
+        !rua || !numero_casa || !telefone || !cidade_id || !bairro
       ) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
       }
@@ -154,11 +157,11 @@ router.post('/', authMiddleware, async (req, res) => {
   
       // CPF não existe, insere nova pessoa
       const insertQuery = `
-        SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+        SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
       `;
       await connection.query(insertQuery, [
         nome, sobrenome, cpf, rg, cep, profissao, estado_civil,
-        rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id
+        rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id, bairro
       ]);
   
       const idQuery = `

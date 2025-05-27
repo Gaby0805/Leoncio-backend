@@ -14,7 +14,7 @@ const connection = new Pool({
 // Teste simples: buscar o horário atual do banco
 const getTime = async () => {
   try {
-    const res = await connection.query('SELECT NOW()');
+    const res = await connection.query('SELECT Now()');
     console.log('Horário atual do banco:', res.rows[0]);
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
@@ -25,4 +25,4 @@ const getTime = async () => {
 getTime();
 
 // Exportar o pool para uso em outras partes da aplicação
-export default connection;
+export default connection; 
