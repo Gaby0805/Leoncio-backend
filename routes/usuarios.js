@@ -252,16 +252,10 @@ router.post('/autenticar', async (req, res) => {
                 try {
                     const token = validationLogin(user.id_user);
                     console.log("Passo 3");
-                    res.cookie('token', token, {
-                        httpOnly: true,
-                        secure: true,                    // em produção exige HTTPS
-                        sameSite: IN_PROD ? 'none' : 'lax', // none+secure em prod; lax no dev
-                        maxAge: 24 * 60 * 60 * 1000   })
-                    console.log('cookie enviado',res.getHeader('Set-Cookie'))
-                    res.status(201).json({ success: true, message: "Logado", id_usuario: user.id_user});
+                    res.status(201).json({ success: true, message: "Logado", id_usuario: user.id_user, token});
                 } catch (err) {
                     console.error("Erro ao gerar o token:", err);
-                    res.status(500).json({ success: false, message: "Erro ao gerar o token." });
+                    res.status(500).json({ success: false, message: "Erro ao gerar o token.", });
                 }
             } else {
                 console.log("Passo 4");

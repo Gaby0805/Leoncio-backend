@@ -25,22 +25,23 @@ export function validationLogin(id_user) {
     }
 }
 export function authMiddleware(req, res, next) {
-    // Verifique se o cabeçalho 'Authorization' está presente
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
-    const token = req.cookies.token
-    console.log('COOKIE AUTHUSER  :: ', token)
-    if (!token) {
-        console.log("❌ Token não fornecido!");
-        return res.status(401).json({ message: 'Token não fornecido' });
-    }
+  console.log('TOKEN HEADER AUTHORIZATION ::', token);
 
-    try {
-        const decoded = jwt.verify(token, SECRET_WORD);
-        console.log("✅ Token decodificado:");
-        req.user = decoded;
-        next();
-    } catch (error) {
-        console.log("❌ Erro ao verificar token:", error.messagem);
-        return res.status(401).json({ message: 'Token inválido' });
-    }
+  if (!token) {
+    console.log("❌ Token não fornecido!");
+    return res.status(401).json({ message: 'Token não fornecido' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET_WORD);
+    console.log("✅ Token decodificado:", decoded);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.log("❌ Erro ao verificar token:", error.message);
+    return res.status(401).json({ message: 'Token inválido' });
+  }
 }
