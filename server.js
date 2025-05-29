@@ -43,14 +43,22 @@ setupSwagger(app);
 app.use(cookieParser()); // Adiciona o parser de cookies
 
 // CORS: Configuração para desenvolvimento local e produção
-const IN_PROD = process.env.NODE_ENV === 'production';
-const frontendOrigin = IN_PROD ? 'https://leoncio-front-m5n7.vercel.app' : 'http://172.16.0.2:3000' ; 
+const allowedOrigins = [
+  'http://172.16.0.2:3000',
+  'http://localhost:3000',
+  'https://leoncio-front-m5n7.vercel.app',
+];
 
 app.use(cors({
-  origin: frontendOrigin, // Permite tanto o frontend local quanto o externo
-  credentials: true // Permite o envio de cookies
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 }));
-
 app.use(bodyParser.json());
 
 // Rotas
