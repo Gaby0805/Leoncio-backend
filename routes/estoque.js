@@ -52,7 +52,7 @@ router.get('/', authMiddleware,async (req, res) => {
 /**
  * @swagger
  * /estoque/valores:
- *   get:
+ *   post:
  *     summary: Listar material especifico
  *     description: Retorna o valor dos materias especificos.
  *     tags: [estoque]
@@ -60,7 +60,7 @@ router.get('/', authMiddleware,async (req, res) => {
  *       200:
  *         description: Lista de materiais retornada com sucesso.
  */
-router.get('/valores',authMiddleware, async (req, res) => {
+router.post('/valores',authMiddleware, async (req, res) => {
     try {
         const id_estoque = req.body
         const query = `SELECT * FROM Estoque where id_estoque = ?`;
