@@ -237,14 +237,16 @@ router.delete('/',authMiddleware, async (req, res) => {
         const query = "DELETE FROM Estoque WHERE id_estoque = $1 RETURNING *";
         const query_quantidade = "DELETE FROM Quantidades WHERE estoque_id = $1 RETURNING *";
         const result_quantidade = await connection.query(query_quantidade, [id_estoque]);
-        const result = await connection.query(query, [id_estoque]);
-
+        if (result_quantidade.rows > 0){
+            const result = await connection.query(query, [id_estoque]);
+            if (result.rowCount === 0) {
+                return res.status(404).json({ Error: "Material não encontrado." });
+            }
+        }
         if (result_quantidade.rowCount === 0) {
             return res.status(404).json({ Error: "não possui quantidade" });
         }
-        if (result.rowCount === 0) {
-            return res.status(404).json({ Error: "Material não encontrado." });
-        }
+
 
         res.json({ message: `Material com ID ${id_estoque} excluído com sucesso.` });
     } catch (error) {
