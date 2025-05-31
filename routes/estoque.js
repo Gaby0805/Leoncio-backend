@@ -63,7 +63,7 @@ router.get('/', authMiddleware,async (req, res) => {
 router.post('/valores',authMiddleware, async (req, res) => {
     try {
         const id_estoque = req.body
-        const query = `SELECT * FROM Estoque where id_estoque = ?`;
+        const query = `SELECT * FROM Estoque where id_estoque = $1`;
         const result = await connection.query(query,[id_estoque]);
         res.json(result.rows);
     } catch (error) {
