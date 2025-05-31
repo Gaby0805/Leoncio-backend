@@ -132,7 +132,7 @@ router.get('/ComodatoListtext',authMiddleware, async (req, res) => {
 
 /**
  * @swagger
- * /estoque/Lions:
+ * /estoque/lions:
  *   get:
  *     summary: Listar quantidades de materiais com informações do estoque 
  *     description: Retorna a quantidade dos produtos junto com os detalhes do estoque usando INNER JOIN para o estoque do Lions em geral.
@@ -146,7 +146,7 @@ router.get('/lions',authMiddleware, async (req, res) => {
         const query = `
             SELECT q.id_quantidade, q.quantidade, e.id_estoque, e.nome_material, e.descricao, e.valor, e.status, e.area_material, e.aquisicao, e.tamanho
             FROM Quantidades q
-            RIGHT JOIN Estoque e ON q.estoque_id = e.id_estoque
+            RIGHT JOIN Estoque e ON q.estoque_id = e.id_estoque 
         `;
         const result = await connection.query(query);
         res.json(result.rows);
