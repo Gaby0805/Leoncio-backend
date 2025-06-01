@@ -92,7 +92,7 @@ router.get('/ativos',authMiddleware, async (req, res) => {
  */
 router.get('/info',authMiddleware, async (req, res) => {
     try {
-        const selectQuery = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id,c.numero_telefone, e.data_limite, e.id_emprestimo from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque ";
+        const selectQuery = 'SELECT e.comodato_id, c.nome_comodato, c.sobrenome_comodato, e.status, q.nome_material, e.estoque_id, c.numero_telefone, e.data_limite, e.id_emprestimo  FROM emprestimo e INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato LEFT JOIN estoque q ON e.estoque_id = q.id_estoque;";
         const result = await connection.query(selectQuery);
         res.json(result.rows);
     } catch (err) {
