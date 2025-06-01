@@ -233,9 +233,16 @@ router.delete('/', authMiddleware, async (req, res) => {
         if (!id_estoque) {
             return res.status(400).json({ Error: "O campo id_estoque é obrigatório." });
         }
-        const query_quantidade = "DELETE FROM Quantidades WHERE estoque_id = $1 RETURNING *";
+
+        // Remove referências em emprestimo, se houver
+        const queryLimparEmprestimos = "UPDATE Emprestimo SET estoque_id = NULL WHERE estoque_id = $1";
+        await connection.query(queryLimparEmprestimos, [id_estoque]);
+
+        // Deleta as quantidades associadas
+        const query_quantidade = "DELETE FROM Quantidades WHERE estoque_id = $1";
         await connection.query(query_quantidade, [id_estoque]);
 
+        // Tenta deletar o material
         const query = "DELETE FROM Estoque WHERE id_estoque = $1 RETURNING *";
         const result = await connection.query(query, [id_estoque]);
 
@@ -244,7 +251,13 @@ router.delete('/', authMiddleware, async (req, res) => {
         }
 
         res.json({ message: `Material com ID ${id_estoque} excluído com sucesso.` });
-            } catch (error) {
+
+    } catch (error) {
+        // Tratamento de erro de integridade referencial
+        if (error.code === '23503') {
+            return res.status(400).json({ Error: 'Este item não pode ser excluído pois está vinculado a outro registro.' });
+        }
+
         res.status(500).json({ Error: error.message });
     }
 });
