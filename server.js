@@ -46,7 +46,7 @@ app.use(cookieParser()); // Adiciona o parser de cookies
 const allowedOrigins = [
   'http://172.16.0.2:3000',
   'http://localhost:3000',
-  'https://leoncio-front-m5n7.vercel.app',
+  'https://lions-club-crb.vercel.app/',
 ];
 
 app.use(cors({
