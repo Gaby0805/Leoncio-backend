@@ -1,3 +1,4 @@
+/* trunk-ignore(git-diff-check/error) */
 import express from 'express';
 import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
@@ -8,7 +9,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
-import { promisify } from "util";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -184,30 +184,83 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  *         description: Erro interno ao gerar o documento.
  */
 
-router.post("/doc", authMiddleware, async (req, res) => {
+
+router.post("/doc", authMiddleware,async (req, res) => {
+  const hoje = new Date();
+  const dataFormatada = hoje.toLocaleDateString("pt-BR");
+
   try {
     const { id } = req.body;
-    if (!id) return res.status(400).json({ error: "ID do comodato é obrigatório." });
 
-    // (busca de dados omitida aqui - copie o seu)
+    if (!id) {
+      return res.status(400).json({ error: "ID do comodato é obrigatório." });
+    }
 
-    // Caminho do template
-    const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
+    // 1. Buscar dados do comodato, cidade e estado
+    const comodatoQuery = `
+      SELECT
+        pc.id_comodato,
+        pc.nome_comodato,
+        pc.sobrenome_comodato,
+        pc.cpf,
+        pc.rg,
+        pc.cep,
+        pc.profissao,
+        pc.estado_civil,
+        pc.rua,
+        pc.bairro,
+        pc.numero_casa,
+        pc.complemento,
+        pc.nacionalidade,
+        pc.numero_telefone,
+        c.nome_cidades AS cidade,
+        e.nome_estado AS estado
+      FROM Pessoas_Comodato pc
+      JOIN Cidades c ON pc.cidade_id = c.id_cidade
+      JOIN Estados e ON c.estado_id = e.id_estado
+      WHERE pc.id_comodato = $1;
+    `;
 
-    // Lê o template como buffer (binário)
-    const content = await fs.readFile(templatePath);
+    const comodatoResult = await connection.query(comodatoQuery, [id]);
+    if (comodatoResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comodato não encontrado." });
+    }
 
-    // Cria zip a partir do buffer
+    const comodato = comodatoResult.rows[0];
+
+    // 2. Buscar nome do usuário que criou o comodato (um dos usuários)
+    const usuarioQuery = `
+      SELECT u.nome_user, u.sobrenome_user
+      FROM Emprestimo emp
+      JOIN Usuarios u ON emp.user_id = u.id_user
+      WHERE emp.comodato_id = $1
+      LIMIT 1;
+    `;
+    const usuarioResult = await connection.query(usuarioQuery, [id]);
+    const usuario = usuarioResult.rows[0] || { nome_user: "Desconhecido", sobrenome_user: "" };
+
+    // 3. Buscar itens emprestados
+    const itensQuery = `
+      SELECT est.nome_material, est.descricao, est.tamanho
+      FROM Emprestimo emp
+      JOIN Estoque est ON emp.estoque_id = est.id_estoque
+      WHERE emp.comodato_id = $1;
+    `;
+    const itensResult = await connection.query(itensQuery, [id]);
+    const itens = itensResult.rows;
+
+    // 4. Carregar e preencher o template
+const filePath = path.join(__dirname, "..", "template", "modelo.docx");
+    const content = await fs.readFile(filePath);
     const zip = new PizZip(content);
 
-    // Instancia o docxtemplater
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
     });
 
-    // Define os dados a preencher
-    doc.setData({
+    // 5. Montar objeto com os dados
+    const dados = {
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
       CPF: comodato.cpf,
@@ -224,38 +277,36 @@ router.post("/doc", authMiddleware, async (req, res) => {
       cidade: comodato.cidade,
       estado: comodato.estado,
       nome_usuario: usuario.nome_user,
-      data_hoje: new Date().toLocaleDateString("pt-BR"),
-      items: itens.map((item) => ({
-        nome_material: item.nome_material,
+      nome_comodato: comodato.nome_comodato,
+      data_hoje: dataFormatada,
+      items: itens.map(item => ({
+        nome_item: item.nome_material,
         descricao: item.descricao,
-        tamanho: item.tamanho,
+        tamanho: item.tamanho
       })),
-    });
+    };
+
+    doc.setData(dados);
 
     try {
       doc.render();
     } catch (error) {
-      // Aqui pega erros de template mal preenchido (ex.: variável não encontrada)
-      const e = {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        properties: error.properties,
-      };
-      console.error(JSON.stringify({ error: e }));
-      return res.status(500).json({ error: "Erro ao renderizar o documento", details: e.message });
+      console.error("Erro ao renderizar o DOCX:", error);
+      return res.status(500).json({ error: "Erro ao preencher o documento" });
     }
 
-    const buf = doc.getZip().generate({ type: "nodebuffer" });
+    const buffer = doc.getZip().generate({ type: "nodebuffer" });
 
-    // Configura resposta para download do arquivo
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-    res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
-    return res.send(buf);
+    res.set({
+      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "Content-Disposition": `attachment; filename=comodato_${id}.docx`,
+    });
 
-  } catch (err) {
-    console.error("Erro ao gerar documento:", err);
-    return res.status(500).json({ error: "Erro interno ao gerar o documento", details: err.message });
+    return res.send(buffer);
+
+  } catch (error) {
+    console.error("Erro ao gerar documento:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
