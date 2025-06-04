@@ -287,12 +287,11 @@ router.post("/doc", authMiddleware, async (req, res) => {
     const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
     // 5. Converter .docx para .pdf
-    const pdfBuffer = await libreConvertAsync(docxBuffer, ".pdf", undefined);
 
     // 6. Enviar PDF
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.pdf`);
-    return res.send(pdfBuffer);
+res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
+return res.send(docxBuffer);
 
   } catch (err) {
     console.error("Erro ao gerar o PDF:", err);
