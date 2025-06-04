@@ -181,7 +181,7 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  *         description: Erro interno ao gerar o documento.
  */
 
-router.post("/doc", authMiddleware,async (req, res) => {
+router.post("/doc", authMiddleware, async (req, res) => {
   const hoje = new Date();
   const dataFormatada = hoje.toLocaleDateString("pt-BR");
 
@@ -192,7 +192,7 @@ router.post("/doc", authMiddleware,async (req, res) => {
       return res.status(400).json({ error: "ID do comodato é obrigatório." });
     }
 
-    // 1. Buscar dados do comodato, cidade e estado
+    // 1. Buscar dados do comodato
     const comodatoQuery = `
       SELECT 
         pc.id_comodato,
@@ -216,7 +216,6 @@ router.post("/doc", authMiddleware,async (req, res) => {
       JOIN Estados e ON c.estado_id = e.id_estado
       WHERE pc.id_comodato = $1;
     `;
-
     const comodatoResult = await connection.query(comodatoQuery, [id]);
     if (comodatoResult.rows.length === 0) {
       return res.status(404).json({ error: "Comodato não encontrado." });
@@ -224,7 +223,7 @@ router.post("/doc", authMiddleware,async (req, res) => {
 
     const comodato = comodatoResult.rows[0];
 
-    // 2. Buscar nome do usuário que criou o comodato (um dos usuários)
+    // 2. Buscar usuário criador
     const usuarioQuery = `
       SELECT u.nome_user, u.sobrenome_user
       FROM Emprestimo emp
@@ -245,18 +244,11 @@ router.post("/doc", authMiddleware,async (req, res) => {
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
 
-    // 4. Carregar e preencher o template
-const filePath = path.join(__dirname, "..", "template", "modelo.docx");
-    const content = await fs.readFile(filePath);
-    const zip = new PizZip(content);
+    // 4. Renderizar HTML com EJS
+    const templatePath = path.join(__dirname, "..", "template", "modelo.ejs");
+    const template = await readFile(templatePath, "utf-8");
 
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
-
-    // 5. Montar objeto com os dados
-    const dados = {
+    const html = ejs.render(template, {
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
       CPF: comodato.cpf,
@@ -273,36 +265,33 @@ const filePath = path.join(__dirname, "..", "template", "modelo.docx");
       cidade: comodato.cidade,
       estado: comodato.estado,
       nome_usuario: usuario.nome_user,
-      nome_comodato: comodato.nome_comodato,
       data_hoje: dataFormatada,
-      items: itens.map(item => ({
-        nome_item: item.nome_material,
-        descricao: item.descricao,
-        tamanho: item.tamanho
-      })),
-    };
-
-    doc.setData(dados);
-
-    try {
-      doc.render();
-    } catch (error) {
-      console.error("Erro ao renderizar o DOCX:", error);
-      return res.status(500).json({ error: "Erro ao preencher o documento" });
-    }
-
-    const buffer = doc.getZip().generate({ type: "nodebuffer" });
-
-    res.set({
-      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "Content-Disposition": `attachment; filename=comodato_${id}.docx`,
+      items: itens
     });
 
-    return res.send(buffer);
+    // 5. Gerar PDF com Puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-  } catch (error) {
-    console.error("Erro ao gerar documento:", error);
-    return res.status(500).json({ error: error.message });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true
+    });
+
+    await browser.close();
+
+    // 6. Retornar PDF
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=comodato_${id}.pdf`,
+    });
+
+    return res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error("Erro ao gerar PDF:", err);
+    return res.status(500).json({ error: "Erro interno ao gerar o PDF." });
   }
 });
 
@@ -439,6 +428,55 @@ router.post('/select',authMiddleware, async (req, res) => {
         res.status(500).json({ Error: error.message });
     }
 });
+
+/**
+ * @swagger
+ * /transacao/especifico:
+ *   post:
+ *     summary: Seleciona items do usuário
+ *     description: Retorna os IDs de empréstimo de um usuário específico.
+ *     tags: [transacao]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 example: "123"
+ *     responses:
+ *       201:
+ *         description: Transações retornadas com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_emprestimo:
+ *                         type: integer
+ *       500:
+ *         description: Erro interno do servidor.
+ */
+router.post('/select', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    const query = "SELECT id_emprestimo FROM emprestimo WHERE user_id = $1";
+    const result = await connection.query(query, [id]);
+
+    res.status(201).json({ user: result.rows }); // Adicionado .rows para retornar apenas os dados
+  } catch (error) {
+    res.status(500).json({ Error: error.message });
+  }
+});
+
 /**
  * @swagger
  * /transacao/status:
