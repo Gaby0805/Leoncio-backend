@@ -194,7 +194,9 @@ router.post("/doc", authMiddleware, async (req, res) => {
   try {
     const { id } = req.body;
 
-    if (!id) return res.status(400).json({ error: "ID do comodato é obrigatório." });
+    if (!id) {
+      return res.status(400).json({ error: "ID do comodato é obrigatório." });
+    }
 
     // 1. Buscar dados do comodato
     const comodatoQuery = `
@@ -221,6 +223,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
       WHERE pc.id_comodato = $1;
     `;
     const comodatoResult = await connection.query(comodatoQuery, [id]);
+
     if (comodatoResult.rows.length === 0) {
       return res.status(404).json({ error: "Comodato não encontrado." });
     }
@@ -248,7 +251,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
 
-    // 4. Carregar e preencher .docx com docxtemplater
+    // 4. Gerar .docx
     const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
     const content = fs.readFileSync(templatePath, "binary");
     const zip = new PizZip(content);
@@ -286,18 +289,17 @@ router.post("/doc", authMiddleware, async (req, res) => {
 
     const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-    // 5. Converter .docx para .pdf
-
-    // 6. Enviar PDF
-res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
-return res.send(docxBuffer);
+    // 5. Enviar .docx
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
+    return res.send(docxBuffer);
 
   } catch (err) {
-    console.error("Erro ao gerar o PDF:", err);
-    return res.status(500).json({ error: "Erro interno ao gerar o PDF." });
+    console.error("Erro ao gerar o documento:", err);
+    return res.status(500).json({ error: "Erro interno ao gerar o documento." });
   }
 });
+
 
 
 /**
