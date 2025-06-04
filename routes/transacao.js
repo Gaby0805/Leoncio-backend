@@ -464,7 +464,7 @@ router.post('/select',authMiddleware, async (req, res) => {
  *       500:
  *         description: Erro interno do servidor.
  */
-router.post('/select', authMiddleware, async (req, res) => {
+router.post('/esp', authMiddleware, async (req, res) => {
   try {
     const { id } = req.body;
 
