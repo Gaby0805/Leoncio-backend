@@ -10,11 +10,9 @@ import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { promisify } from "util";
-import libre from "libreoffice-convert";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const libreConvertAsync = promisify(libre.convert);
 
 /**
  * @swagger
@@ -240,7 +238,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
     `;
     const usuarioResult = await connection.query(usuarioQuery, [id]);
     const usuario = usuarioResult.rows[0] || { nome_user: "Desconhecido", sobrenome_user: "" };
-
+    console.log('1')
     // 3. Buscar itens emprestados
     const itensQuery = `
       SELECT est.nome_material, est.descricao, est.tamanho
@@ -250,7 +248,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
     `;
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
-
+console.log('2')
     // 4. Gerar .docx
     const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
     const content = fs.readFileSync(templatePath, "binary");
@@ -259,7 +257,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
       paragraphLoop: true,
       linebreaks: true,
     });
-
+console.log('3')
     doc.setData({
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
@@ -284,20 +282,23 @@ router.post("/doc", authMiddleware, async (req, res) => {
         tamanho: item.tamanho,
       })),
     });
-
+console.log('4')
     doc.render();
-
+console.log('5')
     const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
     // 5. Enviar .docx
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
     return res.send(docxBuffer);
-
+console.log('6')
   } catch (err) {
-    console.error("Erro ao gerar o documento:", err);
-    return res.status(500).json({ error: "Erro interno ao gerar o documento." });
+  console.error("Erro ao gerar o documento:", err);
+  if (err instanceof Error) {
+    console.error("Stack trace:", err.stack);
   }
+  return res.status(500).json({ error: "Erro interno ao gerar o documento.", details: err.message });
+}
 });
 
 
