@@ -27,6 +27,26 @@ router.get('/teste', (req, res) => {
     console.log('teste comodato')
 });
 
+router.get("/comodato/ultimo", authMiddleware, async (req, res) => {
+  try {
+    const result = await connection.query(`
+      SELECT id_comodato 
+      FROM Pessoas_Comodato 
+      ORDER BY id_comodato DESC 
+      LIMIT 1;
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Nenhum comodato encontrado." });
+    }
+
+    return res.status(200).json({ id_comodato: result.rows[0].id_comodato });
+  } catch (error) {
+    console.error("Erro ao buscar último comodato:", error);
+    return res.status(500).json({ error: "Erro interno ao buscar comodato." });
+  }
+});
+
 /**
  * @swagger
  * /comodato:

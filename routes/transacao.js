@@ -122,6 +122,10 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
         res.status(500).json({ Error: err.message });
     }
 });
+
+
+
+
 /**
  * @swagger
  * /transacao/getdata:
