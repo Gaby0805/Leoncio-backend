@@ -30,7 +30,7 @@ router.get('/teste', (req, res) => {
 router.get("/comodato/ultimo", authMiddleware, async (req, res) => {
   try {
     const result = await connection.query(`
-      SELECT id_comodato 
+      SELECT id_comodato
       FROM Pessoas_Comodato 
       ORDER BY id_comodato DESC 
       LIMIT 1;
