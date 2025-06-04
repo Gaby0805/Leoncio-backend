@@ -1,4 +1,3 @@
-/* trunk-ignore(git-diff-check/error) */
 import express from 'express';
 import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
@@ -186,78 +185,28 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  */
 
 router.post("/doc", authMiddleware, async (req, res) => {
-  const hoje = new Date();
-  const dataFormatada = hoje.toLocaleDateString("pt-BR");
-
   try {
     const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "ID do comodato é obrigatório." });
 
-    if (!id) {
-      return res.status(400).json({ error: "ID do comodato é obrigatório." });
-    }
+    // (busca de dados omitida aqui - copie o seu)
 
-    // 1. Buscar dados do comodato
-    const comodatoQuery = `
-      SELECT 
-        pc.id_comodato,
-        pc.nome_comodato,
-        pc.sobrenome_comodato,
-        pc.cpf,
-        pc.rg,
-        pc.cep,
-        pc.profissao,
-        pc.estado_civil,
-        pc.rua,
-        pc.bairro,
-        pc.numero_casa,
-        pc.complemento,
-        pc.nacionalidade,
-        pc.numero_telefone,
-        c.nome_cidades AS cidade,
-        e.nome_estado AS estado
-      FROM Pessoas_Comodato pc
-      JOIN Cidades c ON pc.cidade_id = c.id_cidade
-      JOIN Estados e ON c.estado_id = e.id_estado
-      WHERE pc.id_comodato = $1;
-    `;
-    const comodatoResult = await connection.query(comodatoQuery, [id]);
-
-    if (comodatoResult.rows.length === 0) {
-      return res.status(404).json({ error: "Comodato não encontrado." });
-    }
-
-    const comodato = comodatoResult.rows[0];
-
-    // 2. Buscar usuário criador
-    const usuarioQuery = `
-      SELECT u.nome_user, u.sobrenome_user
-      FROM Emprestimo emp
-      JOIN Usuarios u ON emp.user_id = u.id_user
-      WHERE emp.comodato_id = $1
-      LIMIT 1;
-    `;
-    const usuarioResult = await connection.query(usuarioQuery, [id]);
-    const usuario = usuarioResult.rows[0] || { nome_user: "Desconhecido", sobrenome_user: "" };
-    console.log('1')
-    // 3. Buscar itens emprestados
-    const itensQuery = `
-      SELECT est.nome_material, est.descricao, est.tamanho
-      FROM Emprestimo emp
-      JOIN Estoque est ON emp.estoque_id = est.id_estoque
-      WHERE emp.comodato_id = $1;
-    `;
-    const itensResult = await connection.query(itensQuery, [id]);
-    const itens = itensResult.rows;
-console.log('2')
-    // 4. Gerar .docx
+    // Caminho do template
     const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
-    const content = await fs.readFileSync(templatePath, "binary");
+
+    // Lê o template como buffer (binário)
+    const content = await fs.readFile(templatePath);
+
+    // Cria zip a partir do buffer
     const zip = new PizZip(content);
+
+    // Instancia o docxtemplater
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
     });
-console.log('3')
+
+    // Define os dados a preencher
     doc.setData({
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
@@ -275,32 +224,40 @@ console.log('3')
       cidade: comodato.cidade,
       estado: comodato.estado,
       nome_usuario: usuario.nome_user,
-      data_hoje: dataFormatada,
+      data_hoje: new Date().toLocaleDateString("pt-BR"),
       items: itens.map((item) => ({
         nome_material: item.nome_material,
         descricao: item.descricao,
         tamanho: item.tamanho,
       })),
     });
-console.log('4')
-    doc.render();
-console.log('5')
-    const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-    // 5. Enviar .docx
+    try {
+      doc.render();
+    } catch (error) {
+      // Aqui pega erros de template mal preenchido (ex.: variável não encontrada)
+      const e = {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        properties: error.properties,
+      };
+      console.error(JSON.stringify({ error: e }));
+      return res.status(500).json({ error: "Erro ao renderizar o documento", details: e.message });
+    }
+
+    const buf = doc.getZip().generate({ type: "nodebuffer" });
+
+    // Configura resposta para download do arquivo
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.docx`);
-    return res.send(docxBuffer);
-console.log('6')
-  } catch (err) {
-  console.error("Erro ao gerar o documento:", err);
-  if (err instanceof Error) {
-    console.error("Stack trace:", err.stack);
-  }
-  return res.status(500).json({ error: "Erro interno ao gerar o documento.", details: err.message });
-}
-});
+    return res.send(buf);
 
+  } catch (err) {
+    console.error("Erro ao gerar documento:", err);
+    return res.status(500).json({ error: "Erro interno ao gerar o documento", details: err.message });
+  }
+});
 
 
 /**
