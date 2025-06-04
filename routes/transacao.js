@@ -4,7 +4,7 @@ import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
 import {authMiddleware} from './authuser.js'
 const router = express.Router();
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
@@ -251,7 +251,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
 console.log('2')
     // 4. Gerar .docx
     const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
-    const content = fs.readFileSync(templatePath, "binary");
+    const content = await fs.readFileSync(templatePath, "binary");
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
