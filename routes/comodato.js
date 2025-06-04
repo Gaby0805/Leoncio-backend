@@ -27,7 +27,18 @@ router.get('/teste', (req, res) => {
     console.log('teste comodato')
 });
 
-router.get("/comodato/ultimo", authMiddleware, async (req, res) => {
+/**
+ * @swagger
+ * /comodato/lastuser:
+ *   get:
+ *     summary: Teste da API
+ *     description: Verifica se a API está funcionando corretamente.
+ *     tags: [comodato]
+ *     responses:
+ *       200:
+ *         description: API funcionando.
+ */
+router.get("/lastuser", authMiddleware, async (req, res) => {
   try {
     const result = await connection.query(`
       SELECT id_comodato
