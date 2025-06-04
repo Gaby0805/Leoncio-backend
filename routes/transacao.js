@@ -9,10 +9,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import { promisify } from "util";
+import libre from "libreoffice-convert";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+const libreConvertAsync = promisify(libre.convert);
 
 /**
  * @swagger
@@ -192,9 +194,7 @@ router.post("/doc", authMiddleware, async (req, res) => {
   try {
     const { id } = req.body;
 
-    if (!id) {
-      return res.status(400).json({ error: "ID do comodato é obrigatório." });
-    }
+    if (!id) return res.status(400).json({ error: "ID do comodato é obrigatório." });
 
     // 1. Buscar dados do comodato
     const comodatoQuery = `
@@ -248,11 +248,16 @@ router.post("/doc", authMiddleware, async (req, res) => {
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
 
-    // 4. Renderizar HTML com EJS
-    const templatePath = path.join(__dirname, "..", "template", "modelo.ejs");
-    const template = await readFile(templatePath, "utf-8");
+    // 4. Carregar e preencher .docx com docxtemplater
+    const templatePath = path.join(__dirname, "..", "template", "modelo.docx");
+    const content = fs.readFileSync(templatePath, "binary");
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
 
-    const html = ejs.render(template, {
+    doc.setData({
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
       CPF: comodato.cpf,
@@ -270,31 +275,27 @@ router.post("/doc", authMiddleware, async (req, res) => {
       estado: comodato.estado,
       nome_usuario: usuario.nome_user,
       data_hoje: dataFormatada,
-      items: itens
+      items: itens.map((item) => ({
+        nome_material: item.nome_material,
+        descricao: item.descricao,
+        tamanho: item.tamanho,
+      })),
     });
 
-    // 5. Gerar PDF com Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    doc.render();
 
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true
-    });
+    const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-    await browser.close();
+    // 5. Converter .docx para .pdf
+    const pdfBuffer = await libreConvertAsync(docxBuffer, ".pdf", undefined);
 
-    // 6. Retornar PDF
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename=comodato_${id}.pdf`,
-    });
-
+    // 6. Enviar PDF
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=comodato_${id}.pdf`);
     return res.send(pdfBuffer);
 
   } catch (err) {
-    console.error("Erro ao gerar PDF:", err);
+    console.error("Erro ao gerar o PDF:", err);
     return res.status(500).json({ error: "Erro interno ao gerar o PDF." });
   }
 });
