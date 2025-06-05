@@ -185,18 +185,17 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
  */
 
 
-router.post("/doc", authMiddleware,async (req, res) => {
+router.post('/doc', authMiddleware, async (req, res) => {
   const hoje = new Date();
-  const dataFormatada = hoje.toLocaleDateString("pt-BR");
+  const dataFormatada = hoje.toLocaleDateString('pt-BR');
 
   try {
     const { id } = req.body;
-
     if (!id) {
-      return res.status(400).json({ error: "ID do comodato é obrigatório." });
+      return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
     }
 
-    // 1. Buscar dados do comodato, cidade e estado
+    // Buscar dados do comodato, cidade e estado
     const comodatoQuery = `
       SELECT
         pc.id_comodato,
@@ -220,15 +219,13 @@ router.post("/doc", authMiddleware,async (req, res) => {
       JOIN Estados e ON c.estado_id = e.id_estado
       WHERE pc.id_comodato = $1;
     `;
-
     const comodatoResult = await connection.query(comodatoQuery, [id]);
     if (comodatoResult.rows.length === 0) {
-      return res.status(404).json({ error: "Comodato não encontrado." });
+      return res.status(404).json({ error: 'Comodato não encontrado.' });
     }
-
     const comodato = comodatoResult.rows[0];
 
-    // 2. Buscar nome do usuário que criou o comodato (um dos usuários)
+    // Buscar nome do usuário que criou o comodato (um dos usuários)
     const usuarioQuery = `
       SELECT u.nome_user, u.sobrenome_user
       FROM Emprestimo emp
@@ -237,9 +234,9 @@ router.post("/doc", authMiddleware,async (req, res) => {
       LIMIT 1;
     `;
     const usuarioResult = await connection.query(usuarioQuery, [id]);
-    const usuario = usuarioResult.rows[0] || { nome_user: "Desconhecido", sobrenome_user: "" };
+    const usuario = usuarioResult.rows[0] || { nome_user: 'Desconhecido', sobrenome_user: '' };
 
-    // 3. Buscar itens emprestados
+    // Buscar itens emprestados
     const itensQuery = `
       SELECT est.nome_material, est.descricao, est.tamanho
       FROM Emprestimo emp
@@ -249,8 +246,8 @@ router.post("/doc", authMiddleware,async (req, res) => {
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
 
-    // 4. Carregar e preencher o template
-const filePath = path.join(__dirname, "..", "template", "modelo.docx");
+    // Carregar e preencher o template
+    const filePath = path.join(__dirname, '..', 'template', 'modelo.docx');
     const content = await fs.readFile(filePath);
     const zip = new PizZip(content);
 
@@ -259,7 +256,7 @@ const filePath = path.join(__dirname, "..", "template", "modelo.docx");
       linebreaks: true,
     });
 
-    // 5. Montar objeto com os dados
+    // Montar objeto com os dados para template
     const dados = {
       nome: comodato.nome_comodato,
       sobrenome: comodato.sobrenome_comodato,
@@ -282,7 +279,7 @@ const filePath = path.join(__dirname, "..", "template", "modelo.docx");
       items: itens.map(item => ({
         nome_item: item.nome_material,
         descricao: item.descricao,
-        tamanho: item.tamanho
+        tamanho: item.tamanho,
       })),
     };
 
@@ -291,24 +288,22 @@ const filePath = path.join(__dirname, "..", "template", "modelo.docx");
     try {
       doc.render();
     } catch (error) {
-      console.error("Erro ao renderizar o DOCX:", error);
-      return res.status(500).json({ error: "Erro ao preencher o documento" });
+      console.error('Erro ao renderizar o DOCX:', error);
+      return res.status(500).json({ error: 'Erro ao gerar o documento.' });
     }
 
-    const buffer = doc.getZip().generate({ type: "nodebuffer" });
+    const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    res.set({
-      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "Content-Disposition": `attachment; filename=comodato_${id}.docx`,
-    });
-
-    return res.send(buffer);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename=comodato_${id}.docx`);
+    return res.send(buf);
 
   } catch (error) {
-    console.error("Erro ao gerar documento:", error);
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao gerar o documento.' });
   }
 });
+
 
 
 /**
