@@ -4,7 +4,7 @@ import connection from '../Database.js';
 import scheduleEmail from '../tasks/organize.js';
 import {authMiddleware} from './authuser.js'
 const router = express.Router();
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
