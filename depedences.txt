@@ -1,1 +1,1 @@
-npm i express cors body-parser dotenv @types/swagger-ui-express pg swagger-ui-express swagger-jsdoc
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzUwMDE0MjA0LCJleHAiOjE3NTAxMDA2MDR9.6VHnfGEOeCjECHInxbX7_M_dyQ8bueXhga3ToA1Bz1c

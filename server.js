@@ -13,6 +13,7 @@ import comodatoRoutes from './routes/comodato.js';
 import estoqueRoutes from './routes/estoque.js';
 import quantidadeRoutes from './routes/quantidade.js';
 import transacaoRoutes from './routes/transacao.js';
+import relatorioRoutes from './routes/relatorio.js';
 import scheduleEmail from './tasks/organize.js';
 
 // Função para reagendar e-mails (exemplo de uso do banco de dados)
@@ -47,6 +48,8 @@ const allowedOrigins = [
   'http://172.16.0.2:3000',
   'http://localhost:3000',
   'https://lions-club-crb.vercel.app',
+  'http://localhost:3333',
+   null,
 ];
 
 app.use(cors({
@@ -69,6 +72,7 @@ app.use('/comodato', comodatoRoutes);
 app.use('/estoque', estoqueRoutes);
 app.use('/transacao', transacaoRoutes);
 app.use('/quantidades', quantidadeRoutes);
+app.use('/relatorio', relatorioRoutes );
 
 // Iniciando o servidor
 app.listen(port, () => {
