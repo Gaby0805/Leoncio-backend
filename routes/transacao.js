@@ -190,10 +190,19 @@ router.post('/doc', authMiddleware, async (req, res) => {
   const dataFormatada = hoje.toLocaleDateString('pt-BR');
 
   try {
-    const { id } = req.body;
+    const { id, area } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
     }
+
+  if (area === "relatorio") {
+    const areaQuery = 'SELECT comodato_id FROM emprestimo WHERE id_emprestimo = $1';
+    const emprestResult = await connection.query(areaQuery, [id]);
+    if (emprestResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Comodato não encontrado.' });
+    }
+    id = emprestResult.rows[0].comodato_id;
+  }
 
     // Buscar dados do comodato, cidade e estado
     const comodatoQuery = `
