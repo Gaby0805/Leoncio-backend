@@ -190,7 +190,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
   const dataFormatada = hoje.toLocaleDateString('pt-BR');
   console.log('passo 1')
   try {
-    const { id, area } = req.body;
+    let { id, area } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
     }
