@@ -188,21 +188,25 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
 router.post('/doc', authMiddleware, async (req, res) => {
   const hoje = new Date();
   const dataFormatada = hoje.toLocaleDateString('pt-BR');
+  let new_id;
   console.log('passo 1')
   try {
     const { id, area } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
     }
-console.log('passo 2')
-  if (area === "relatorio") {
-    const areaQuery = 'SELECT comodato_id FROM emprestimo WHERE id_emprestimo = $1';
-    const emprestResult = await connection.query(areaQuery, [id]);
-    if (emprestResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Comodato não encontrado.' });
+    console.log('passo 2')
+    if (area === "relatorio") {
+      const areaQuery = 'SELECT comodato_id FROM emprestimo WHERE id_emprestimo = $1';
+      const emprestResult = await connection.query(areaQuery, [id]);
+      if (emprestResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Comodato não encontrado.' });
+      }
+      new_id = emprestResult.rows[0].comodato_id;
     }
-    id = emprestResult.rows[0].comodato_id;
-  }
+    else {
+      new_id = id 
+    }
 console.log('passo 3')
     // Buscar dados do comodato, cidade e estado
     const comodatoQuery = `
@@ -228,7 +232,7 @@ console.log('passo 3')
       JOIN Estados e ON c.estado_id = e.id_estado
       WHERE pc.id_comodato = $1;
     `;
-    const comodatoResult = await connection.query(comodatoQuery, [id]);
+    const comodatoResult = await connection.query(comodatoQuery, [new_id]);
     if (comodatoResult.rows.length === 0) {
       return res.status(404).json({ error: 'Comodato não encontrado.' });
     }
@@ -242,7 +246,7 @@ console.log('passo 4')
       WHERE emp.comodato_id = $1
       LIMIT 1;
     `;
-    const usuarioResult = await connection.query(usuarioQuery, [id]);
+    const usuarioResult = await connection.query(usuarioQuery, [new_id]);
     const usuario = usuarioResult.rows[0] || { nome_user: 'Desconhecido', sobrenome_user: '' };
 console.log('passo 5')
     // Buscar itens emprestados
@@ -252,7 +256,7 @@ console.log('passo 5')
       JOIN Estoque est ON emp.estoque_id = est.id_estoque
       WHERE emp.comodato_id = $1;
     `;
-    const itensResult = await connection.query(itensQuery, [id]);
+    const itensResult = await connection.query(itensQuery, [new_id]);
     const itens = itensResult.rows;
 console.log('passo 6')
     // Carregar e preencher o template
