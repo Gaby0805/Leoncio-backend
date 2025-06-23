@@ -188,13 +188,13 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
 router.post('/doc', authMiddleware, async (req, res) => {
   const hoje = new Date();
   const dataFormatada = hoje.toLocaleDateString('pt-BR');
-
+  console.log('passo 1')
   try {
     const { id, area } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
     }
-
+console.log('passo 2')
   if (area === "relatorio") {
     const areaQuery = 'SELECT comodato_id FROM emprestimo WHERE id_emprestimo = $1';
     const emprestResult = await connection.query(areaQuery, [id]);
@@ -203,7 +203,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
     }
     id = emprestResult.rows[0].comodato_id;
   }
-
+console.log('passo 3')
     // Buscar dados do comodato, cidade e estado
     const comodatoQuery = `
       SELECT
@@ -233,7 +233,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Comodato não encontrado.' });
     }
     const comodato = comodatoResult.rows[0];
-
+console.log('passo 4')
     // Buscar nome do usuário que criou o comodato (um dos usuários)
     const usuarioQuery = `
       SELECT u.nome_user, u.sobrenome_user
@@ -244,7 +244,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
     `;
     const usuarioResult = await connection.query(usuarioQuery, [id]);
     const usuario = usuarioResult.rows[0] || { nome_user: 'Desconhecido', sobrenome_user: '' };
-
+console.log('passo 5')
     // Buscar itens emprestados
     const itensQuery = `
       SELECT est.nome_material, est.descricao, est.tamanho
@@ -254,7 +254,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
     `;
     const itensResult = await connection.query(itensQuery, [id]);
     const itens = itensResult.rows;
-
+console.log('passo 6')
     // Carregar e preencher o template
     const filePath = path.join(__dirname, '..', 'template', 'modelo.docx');
     const content = await fs.readFile(filePath);
@@ -309,7 +309,7 @@ router.post('/doc', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erro ao gerar o documento.' });
+    res.status(500).json({ error: error });
   }
 });
 
