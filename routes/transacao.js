@@ -261,7 +261,7 @@ console.log('passo 5')
     const itens = itensResult.rows;
 console.log('passo 6')
     // Carregar e preencher o template
-    const filePath = path.join(__dirname, '..', 'template', 'modelo.docx');
+    const filePath = path.join(__dirname, '..', 'template', 'modelo2.docx');
     const content = await fs.readFile(filePath);
     const zip = new PizZip(content);
 
