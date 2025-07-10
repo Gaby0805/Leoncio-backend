@@ -135,6 +135,8 @@ router.get('/info', authMiddleware,async (req, res) => {
  *                 type: string
  *               telefone:
  *                 type: string
+ *               telefone2:
+ *                 type: string
  *               cidade_id:
  *                 type: integer
  *               bairro:
@@ -158,12 +160,26 @@ router.post('/', async (req, res) => {
         numero_casa,
         complemento,
         telefone,
+        telefone2,
         cidade_id
       } = req.body;
-  
+      console.log(        nome,
+        sobrenome,
+        cpf,
+        rg,
+        cep,
+        profissao,
+        estado_civil,
+        rua,
+        bairro,
+        numero_casa,
+        complemento,
+        telefone,
+        telefone2,
+        cidade_id)
       if (
         !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
-        !rua || !numero_casa || !telefone || !cidade_id || !bairro
+        !rua || !numero_casa || !telefone || !cidade_id || !bairro || !telefone2
       ) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
       }
@@ -187,13 +203,32 @@ router.post('/', async (req, res) => {
       }
   
       // CPF não existe, insere nova pessoa
-      const insertQuery = `
-        SELECT insert_pessoa_comodato($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
-      `;
-      await connection.query(insertQuery, [
-        nome, sobrenome, cpf, rg, cep, profissao, estado_civil,
-        rua, numero_casa, complemento, 'Brasileiro', telefone, cidade_id, bairro
-      ]);
+const insertQuery = `
+  SELECT insert_pessoa_comodato(
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9, $10,
+    $11, $12, $13, $14, $15
+  );
+`;
+
+await connection.query(insertQuery, [
+  nome,              // 1
+  sobrenome,         // 2
+  cpf,               // 3
+  rg,                // 4
+  cep,               // 5
+  profissao,         // 6
+  estado_civil,      // 7
+  rua,               // 8
+  numero_casa,       // 9
+  complemento,       // 10
+  'Brasileiro',      // 11
+  telefone,          // 12
+  cidade_id,         // 13
+  telefone2,         // 14
+  bairro             // 15
+]);
+
   
       const idQuery = `
         SELECT id_comodato FROM Pessoas_Comodato 

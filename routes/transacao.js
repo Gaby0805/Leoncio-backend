@@ -91,7 +91,7 @@ router.get('/ativos',authMiddleware, async (req, res) => {
  */
 router.get('/info',authMiddleware, async (req, res) => {
     try {
-        const selectQuery = 'SELECT e.comodato_id, c.nome_comodato, c.sobrenome_comodato, e.status, q.nome_material, e.estoque_id, c.numero_telefone, e.data_limite, e.id_emprestimo  FROM emprestimo e INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato LEFT JOIN estoque q ON e.estoque_id = q.id_estoque;';
+        const selectQuery = 'SELECT e.comodato_id, c.nome_comodato, c.sobrenome_comodato, e.status, q.nome_material, e.estoque_id, c.numero_telefone,c.numero_telefone2 e.data_limite, e.id_emprestimo  FROM emprestimo e INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato LEFT JOIN estoque q ON e.estoque_id = q.id_estoque;';
         const result = await connection.query(selectQuery);
         res.json(result.rows);
     } catch (err) {
@@ -225,6 +225,7 @@ console.log('passo 3')
         pc.complemento,
         pc.nacionalidade,
         pc.numero_telefone,
+        pc.numero_telefone2,
         c.nome_cidades AS cidade,
         e.nome_estado AS estado
       FROM Pessoas_Comodato pc
@@ -282,6 +283,7 @@ console.log('passo 6')
       numero: comodato.numero_casa,
       complemento: comodato.complemento,
       telefone: comodato.numero_telefone,
+      telefone: comodato.numero_telefone2,
       bairro: comodato.bairro,
       nacionalidade: comodato.nacionalidade,
       cidade: comodato.cidade,
