@@ -283,7 +283,7 @@ console.log('passo 6')
       numero: comodato.numero_casa,
       complemento: comodato.complemento,
       telefone: comodato.numero_telefone,
-      telefone: comodato.numero_telefone2,
+      telefone2: comodato.numero_telefone2,
       bairro: comodato.bairro,
       nacionalidade: comodato.nacionalidade,
       cidade: comodato.cidade,
