@@ -163,23 +163,9 @@ router.post('/', async (req, res) => {
         telefone2,
         cidade_id
       } = req.body;
-      console.log(        nome,
-        sobrenome,
-        cpf,
-        rg,
-        cep,
-        profissao,
-        estado_civil,
-        rua,
-        bairro,
-        numero_casa,
-        complemento,
-        telefone,
-        telefone2,
-        cidade_id)
       if (
-        !nome || !sobrenome || !cpf || !rg || !cep || !profissao || !estado_civil ||
-        !rua || !numero_casa || !telefone || !cidade_id || !bairro || !telefone2
+        !nome || !sobrenome || !cpf || !profissao  ||
+        !rua || !numero_casa || !telefone || !cidade_id || !bairro 
       ) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
       }
