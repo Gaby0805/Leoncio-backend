@@ -323,7 +323,7 @@ console.log('passo 6')
       cidade: comodato.cidade,
       estado: comodato.estado,
       nome_usuario: usuario.secretaria_completo,
-      Cargo: usuario.secretaria_completo,
+      Cargo: usuario.tipo_user,
       dia,
       mes,
       ano,
