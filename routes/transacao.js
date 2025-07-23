@@ -291,7 +291,7 @@ WHERE tipo_user = 'Coordenador de banco ortopédico';
     FROM emprestimo 
     WHERE id_emprestimo <= $1;
     `;
-    const contador_query = await connection.query(contador_sql, [id_emprestimo]);
+    const contador_query = await connection.query(contador_sql, [id]);
     const contador_obj = contador_query.rows[0];
 console.log('passo 6')
     // Carregar e preencher o template
