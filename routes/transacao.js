@@ -285,6 +285,14 @@ WHERE tipo_user = 'Coordenador de banco ortopédico';
     `;
     const coordenador_query = await connection.query(coordenadorsql);
     const coordenador_obj = coordenador_query.rows[0];
+
+    const contador_sql = `
+    SELECT COUNT(*) 
+    FROM emprestimo 
+    WHERE id_emprestimo <= $1;
+    `;
+    const contador_query = await connection.query(contador_sql);
+    const contador_obj = contador_query.rows[0];
 console.log('passo 6')
     // Carregar e preencher o template
     const filePath = path.join(__dirname, '..', 'template', 'modelo3.docx');
@@ -295,7 +303,7 @@ console.log('passo 6')
       paragraphLoop: true,
       linebreaks: true,
     });
-    let ano_p = ano + 1
+    const ano_p = ano + 1
     // Montar objeto com os dados para template
     const dados = {
       nome: comodato.nome_comodato,
@@ -320,6 +328,7 @@ console.log('passo 6')
       mes,
       ano,
       ano_p,
+      contador: contador_obj.count,
       Presidente: presidente_obj.nome_completo,
       nome_usuariocoordenador: coordenador_obj.nome_completo,
       Cargo_coordenador: coordenador_obj.tipo_user,
