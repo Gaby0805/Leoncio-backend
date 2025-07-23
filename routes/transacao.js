@@ -241,10 +241,11 @@ console.log('passo 3')
 console.log('passo 4')
     // Buscar nome do usuário que criou o comodato (um dos usuários)
     const usuarioQuery = `
-      SELECT u.nome_user, u.sobrenome_user
+      SELECT u.nome_user || u.sobrenome_user as secretaria_completo,
+      tipo_user
       FROM Emprestimo emp
       JOIN Usuarios u ON emp.user_id = u.id_user
-      WHERE emp.comodato_id = $1
+      WHERE emp.comodato_id =  $1
       LIMIT 1;
     `;
     const usuarioResult = await connection.query(usuarioQuery, [new_id]);
@@ -259,9 +260,34 @@ console.log('passo 5')
     `;
     const itensResult = await connection.query(itensQuery, [new_id]);
     const itens = itensResult.rows;
+    const datesql = `
+    SELECT 
+    EXTRACT(YEAR FROM now() AT TIME ZONE 'America/Campo_Grande') AS ano,
+    EXTRACT(MONTH FROM now() AT TIME ZONE 'America/Campo_Grande') AS mes,
+    EXTRACT(DAY FROM now() AT TIME ZONE 'America/Campo_Grande') AS dia;
+    `;
+    const date_result = await connection.query(datesql);
+    const date_obj = date_result.rows;
+    const { ano, mes , dia} = date_obj[0]
+
+    const presidentesql = `
+SELECT nome_user || ' ' || sobrenome_user AS nome_completo
+FROM usuarios
+WHERE tipo_user = 'Presidente';
+    `;
+    const presidente_result = await connection.query(presidentesql);
+    const presidente_obj = presidente_result.rows[0];
+
+    const coordenadorsql = `
+SELECT nome_user || sobrenome_user AS nome_completo, tipo_user
+FROM usuarios
+WHERE tipo_user = 'Coordenador de banco ortopédico';
+    `;
+    const coordenador_query = await connection.query(coordenadorsql);
+    const coordenador_obj = coordenador_query.rows[0];
 console.log('passo 6')
     // Carregar e preencher o template
-    const filePath = path.join(__dirname, '..', 'template', 'modelo2.docx');
+    const filePath = path.join(__dirname, '..', 'template', 'modelo3.docx');
     const content = await fs.readFile(filePath);
     const zip = new PizZip(content);
 
@@ -269,7 +295,7 @@ console.log('passo 6')
       paragraphLoop: true,
       linebreaks: true,
     });
-
+    let ano_p = ano + 1
     // Montar objeto com os dados para template
     const dados = {
       nome: comodato.nome_comodato,
@@ -288,13 +314,17 @@ console.log('passo 6')
       nacionalidade: comodato.nacionalidade,
       cidade: comodato.cidade,
       estado: comodato.estado,
-      nome_usuario: usuario.nome_user,
-      nome_comodato: comodato.nome_comodato,
-      data_hoje: dataFormatada,
+      nome_usuario: usuario.secretaria_completo,
+      Cargo: usuario.secretaria_completo,
+      dia,
+      mes,
+      ano,
+      ano_p,
+      Presidente: presidente_obj.nome_completo,
+      nome_usuariocoordenador: coordenador_obj.nome_completo,
+      Cargo_coordenador: coordenador_obj.tipo_user,
       items: itens.map(item => ({
-        nome_item: item.nome_material,
-        descricao: item.descricao,
-        tamanho: item.tamanho,
+        nome_item: item.nome_material
       })),
     };
 
