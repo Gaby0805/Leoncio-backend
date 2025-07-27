@@ -146,6 +146,23 @@ router.get('/concluidos',authMiddleware, async (req, res) => {
         res.status(500).json({ Error: err.message });
     }
 });
+
+function formatCPF(cpf) {
+  cpf = cpf.replace(/\D/g, ''); // remove tudo que não for número
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+}
+
+function formatTelefone(tel) {
+  tel = tel.replace(/\D/g, '');
+  if (tel.length === 11) {
+    return tel.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  } else if (tel.length === 10) {
+    return tel.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+  } else {
+    return tel;
+  }
+}
+
 /**
  * @swagger
  * /transacao/doc:
@@ -305,37 +322,37 @@ console.log('passo 6')
     });
     const ano_p = ano + 1
     // Montar objeto com os dados para template
-    const dados = {
-      nome: comodato.nome_comodato,
-      sobrenome: comodato.sobrenome_comodato,
-      CPF: comodato.cpf,
-      RG: comodato.rg,
-      CEP: comodato.cep,
-      profissao: comodato.profissao,
-      estado_civil: comodato.estado_civil,
-      rua: comodato.rua,
-      numero: comodato.numero_casa,
-      complemento: comodato.complemento,
-      telefone: comodato.numero_telefone,
-      telefone2: comodato.numero_telefone2,
-      bairro: comodato.bairro,
-      nacionalidade: comodato.nacionalidade,
-      cidade: comodato.cidade,
-      estado: comodato.estado,
-      nome_usuario: usuario.secretaria_completo,
-      Cargo: usuario.tipo_user,
-      dia,
-      mes,
-      ano,
-      ano_p,
-      contador: contador_obj.count,
-      Presidente: presidente_obj.nome_completo,
-      nome_usuariocoordenador: coordenador_obj.nome_completo,
-      Cargo_coordenador: coordenador_obj.tipo_user,
-      items: itens.map(item => ({
-        nome_item: item.nome_material
-      })),
-    };
+const dados = {
+  nome: comodato.nome_comodato,
+  sobrenome: comodato.sobrenome_comodato,
+  CPF: formatCPF(comodato.cpf),
+  RG: comodato.rg,
+  CEP: comodato.cep,
+  profissao: comodato.profissao,
+  estado_civil: comodato.estado_civil,
+  rua: comodato.rua,
+  numero: comodato.numero_casa,
+  complemento: comodato.complemento,
+  telefone: formatTelefone(comodato.numero_telefone),
+  telefone2: formatTelefone(comodato.numero_telefone2),
+  bairro: comodato.bairro,
+  nacionalidade: comodato.nacionalidade,
+  cidade: comodato.cidade,
+  estado: comodato.estado,
+  nome_usuario: usuario.secretaria_completo,
+  Cargo: usuario.tipo_user,
+  dia,
+  mes,
+  ano,
+  ano_p,
+  contador: contador_obj.count,
+  Presidente: presidente_obj.nome_completo,
+  nome_usuariocoordenador: coordenador_obj.nome_completo,
+  Cargo_coordenador: coordenador_obj.tipo_user,
+  items: itens.map(item => ({
+    nome_item: item.nome_material
+  })),
+};
 
     doc.setData(dados);
 
