@@ -190,11 +190,16 @@ router.post('/', async (req, res) => {
   
       // CPF não existe, insere nova pessoa
 const insertQuery = `
-  SELECT insert_pessoa_comodato(
-    $1, $2, $3, $4, $5,
-    $6, $7, $8, $9, $10,
-    $11, $12, $13, $14, $15
-  );
+  INSERT INTO Pessoas_Comodato (
+    nome, sobrenome, cpf, rg, cep,
+    profissao, estado_civil, rua, numero_casa, complemento,
+    nacionalidade, telefone, cidade_id, telefone2, bairro
+  ) VALUES (
+    $1,$2,$3,$4,$5,
+    $6,$7,$8,$9,$10,
+    $11,$12,$13,$14,$15
+  )
+  RETURNING id_comodato;
 `;
 
 await connection.query(insertQuery, [
@@ -314,7 +319,7 @@ router.put('/', authMiddleware,async (req, res) => {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
 
-        const query = "select update_comodato($1,$2,$3,$4,$5,$6,$7)";
+        const query = "UPDATE usuario_comodato SET u_nome = $2,u_sobrenome = $3,u_email = $4,u_cpf = $5,u_senha = $6,u_tipo = $7 WHERE id_comodato = $1 RETURNING id_comodato, u_nome, u_sobrenome, u_email, u_cpf, u_tipo;";
         const result = await connection.query(query, [id_comodato,u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo ]);
 
         if (result.rowCount === 0) {

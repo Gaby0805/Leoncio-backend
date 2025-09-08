@@ -6,6 +6,9 @@ import connection from './Database.js';
 import cookieParser from 'cookie-parser';
 
 // import rotas 
+import CategoriaRoutes from './routes/categoria.js';
+import SubcategoriaRoutes from './routes/subcategoria.js';
+import ItemRoutes from './routes/item.js';
 import locaisRoutes from './routes/locais.js';
 import usuariosRoutes from './routes/usuarios.js';
 import aniversarianteRoutes from './routes/aniversariante.js';
@@ -73,6 +76,9 @@ app.use('/estoque', estoqueRoutes);
 app.use('/transacao', transacaoRoutes);
 app.use('/quantidades', quantidadeRoutes);
 app.use('/relatorio', relatorioRoutes );
+app.use('/item', ItemRoutes );
+app.use('/sub-categ', SubcategoriaRoutes );
+app.use('/categoria', CategoriaRoutes );
 
 // Iniciando o servidor
 app.listen(port, () => {

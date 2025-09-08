@@ -7,7 +7,7 @@ dotenv.config();
 
 // Criando o pool de conexões
 const connection = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URLT,
   ssl: false
 });
 
