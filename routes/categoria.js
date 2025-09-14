@@ -21,9 +21,9 @@ router.get('/categoria-geral', authMiddleware, async (req, res) => {
 
 router.post('/categoria-geral', authMiddleware, async (req, res) => {
   try {
-    const { nome } = req.body;
+    const { nome,lugar } = req.body;
     if (isEmpty(nome)) return res.status(400).json({ Error: "'nome' é obrigatório." });
-    const result = await connection.query('INSERT INTO categoria_geral (nome) VALUES ($1) RETURNING *', [nome]);
+    const result = await connection.query('INSERT INTO categoria_geral (nome, lugar) VALUES ($1,$2) RETURNING *', [nome,lugar]);
     res.status(201).json({ message: 'Categoria geral criada!', categoria_geral: result.rows[0] });
   } catch (err) {
     res.status(500).json({ Error: err.message });

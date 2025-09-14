@@ -31,6 +31,7 @@ async function reagendarEmails() {
     
     rows.forEach((emprestimo) => {
       scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
+      console.log(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
     });
   } catch (error) {
     console.error('Erro ao reagendar e-mails:', error);
@@ -38,7 +39,7 @@ async function reagendarEmails() {
 }
 
 // Chamamos essa função ao iniciar o servidor
-// reagendarEmails();
+reagendarEmails();
 
 const app = express();
 const port = 3333;

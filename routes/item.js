@@ -35,11 +35,12 @@ router.post('/item', authMiddleware, async (req, res) => {
 
 router.put('/item/:id', authMiddleware, async (req, res) => {
   try {
-    const {  status, id } = req.body;
+    const { id } = req.params;
+    const {  identificacao_do_item,status } = req.body;
     if (isEmpty(id) || isEmpty(identificacao_do_item)) return res.status(400).json({ Error: "'id' e 'identificacao_do_item' são obrigatórios." });
     const result = await connection.query(
-      'UPDATE item SET  status=false, WHERE id_item=$4',
-      [identificacao_do_item, status || false, sub_categoria_id, id]
+      'UPDATE item SET  identificacao_do_item=$1, status=$2 WHERE id_item=$3',
+      [identificacao_do_item, status || false, id]
     );
     if (result.rowCount === 0) return res.status(404).json({ Error: 'Item não encontrado.' });
     res.json({ message: `Item ID ${id} alterado com sucesso.` });
@@ -102,18 +103,21 @@ router.get('/itens', authMiddleware, async (req, res) => {
 
 router.get('/todos', authMiddleware, async (req, res) => {
     try {
-        const { type } = req.body
         const query = `
             SELECT 
+                
                 i.id_item,
+                sc.id_sub_categoria,
+                sc.nome,
                 i.identificacao_do_item,
                 i.status
             FROM item i
             LEFT JOIN sub_categoria sc ON i.sub_categoria_id = sc.id_sub_categoria
-            WHERE sc.categoria = $1
+            where i.status = true
+
         `;
 
-        const result = await connection.query(query, [type]);
+        const result = await connection.query(query, );
         res.json(result.rows);
     } catch (error) {
         console.error(error);

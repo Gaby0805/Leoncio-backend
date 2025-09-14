@@ -5,15 +5,15 @@ const transporter = nodemailer.createTransport({
     port: 587,
     secure: false, // true for port 465, false for other ports
     auth: {
-      user: "gabbiebrabo@gmail.com",
-      pass: "aghi ytkh wlql rsnj ",
+      user: "kah.bento.amorim@gmail.com",
+      pass: "zmmy tqlc ztng nlyp ",
     },
   });
 
   function Enviar( assunto, mensagem) {
     const mailOptions = {
-      from: 'gabbiebrabo@gmail.com',
-      to: 'gabbiebrabo@gmail.com',
+      from: 'kah.bento.amorim@gmail.com',
+      to: 'kah.bento.amorim@gmail.com',
       subject: assunto,
       text: mensagem
     };

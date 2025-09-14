@@ -191,9 +191,9 @@ router.post('/', async (req, res) => {
       // CPF não existe, insere nova pessoa
 const insertQuery = `
   INSERT INTO Pessoas_Comodato (
-    nome, sobrenome, cpf, rg, cep,
+    nome_comodato, sobrenome_comodato, cpf, rg, cep,
     profissao, estado_civil, rua, numero_casa, complemento,
-    nacionalidade, telefone, cidade_id, telefone2, bairro
+    nacionalidade, numero_telefone, cidade_id, numero_telefone2, bairro
   ) VALUES (
     $1,$2,$3,$4,$5,
     $6,$7,$8,$9,$10,
