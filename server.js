@@ -28,7 +28,7 @@ async function reagendarEmails() {
       INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato
       WHERE e.status = 'Ativo';
     `);
-    
+    // aa
     rows.forEach((emprestimo) => {
       scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
       console.log(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
