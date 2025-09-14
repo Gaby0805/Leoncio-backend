@@ -6,6 +6,9 @@ import connection from './Database.js';
 import cookieParser from 'cookie-parser';
 
 // import rotas 
+import CategoriaRoutes from './routes/categoria.js';
+import SubcategoriaRoutes from './routes/subcategoria.js';
+import ItemRoutes from './routes/item.js';
 import locaisRoutes from './routes/locais.js';
 import usuariosRoutes from './routes/usuarios.js';
 import aniversarianteRoutes from './routes/aniversariante.js';
@@ -28,6 +31,7 @@ async function reagendarEmails() {
     
     rows.forEach((emprestimo) => {
       scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
+      console.log(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
     });
   } catch (error) {
     console.error('Erro ao reagendar e-mails:', error);
@@ -35,7 +39,7 @@ async function reagendarEmails() {
 }
 
 // Chamamos essa função ao iniciar o servidor
-// reagendarEmails();
+reagendarEmails();
 
 const app = express();
 const port = 3333;
@@ -73,6 +77,9 @@ app.use('/estoque', estoqueRoutes);
 app.use('/transacao', transacaoRoutes);
 app.use('/quantidades', quantidadeRoutes);
 app.use('/relatorio', relatorioRoutes );
+app.use('/item', ItemRoutes );
+app.use('/sub-categ', SubcategoriaRoutes );
+app.use('/categoria', CategoriaRoutes );
 
 // Iniciando o servidor
 app.listen(port, () => {
