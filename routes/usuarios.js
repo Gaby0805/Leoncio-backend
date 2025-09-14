@@ -187,12 +187,17 @@ router.post('/',async (req, res) => {
     try { //O tipo de usuario se é adm ou normal
         const { u_nome,u_sobrenome,u_email,u_cpf,u_senha,u_tipo  } = req.body;
 
+        const query = `
+        INSERT INTO usuarios (nome_user, sobrenome_user, email, cpf, senha, tipo_user)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id_user, nome_user, sobrenome_user, email, cpf, tipo_user
+        `;
+
         if (isEmpty(u_cpf) || isEmpty(u_email) || isEmpty(u_nome) || isEmpty(u_senha) || isEmpty(u_sobrenome) || isEmpty(u_tipo) ) {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
         const hashpassword = await bcrypt.hash(u_senha, 10)
         //fazer hash da senha
-        const query = "select insert_usuario($1,$2,$3,$4,$5,$6)";
         const result = await connection.query(query, [u_nome,u_sobrenome,u_email,u_cpf,hashpassword,u_tipo]);
 
         res.status(201).json({ message: "usuario inserida com sucesso!", usuario: result.rows[0] });
@@ -351,7 +356,17 @@ router.put('/',authMiddleware, async (req, res) => {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
 
-        const query = "select update_usuario($1,$2,$3,$4,$5,$6  )";
+const query = `
+  UPDATE usuarios
+  SET 
+    u_nome = $2,
+    u_sobrenome = $3,
+    u_email = $4,
+    u_cpf = $5,
+    u_tipo = $6
+  WHERE id_usuario = $1
+  RETURNING id_usuario, u_nome, u_sobrenome, u_email, u_cpf, u_tipo;
+`;
         const result = await connection.query(query, [id_usuario,u_nome,u_sobrenome,u_email,u_cpf,u_tipo ]);
 
         if (result.rowCount === 0) {

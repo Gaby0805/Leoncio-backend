@@ -1,128 +1,210 @@
 /* trunk-ignore(git-diff-check/error) */
-import express from 'express';
-import connection from '../Database.js';
-import scheduleEmail from '../tasks/organize.js';
-import {authMiddleware} from './authuser.js'
-const router = express.Router();
-import fs from "fs/promises";
+import express from "express";
+import connection from "../Database.js";
+import scheduleEmail from "../tasks/organize.js";
+import { authMiddleware } from "./authuser.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import fs from 'fs/promises';
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+
+const router = express.Router();
 
 /**
  * @swagger
  * tags:
  *   - name: transacao
- *     description: Endpoints para gerenciar as transacoes
+ *     description: Endpoints para gerenciar os empréstimos
  */
 
-/**
- * @swagger
- * /transacao/teste:
- *   get:
- *     summary: Teste da API
- *     description: Verifica se a API está funcionando corretamente.
- *     tags: [transacao]
- *     responses:
- *       200:
- *         description: API funcionando.
- */
-router.get('/teste', (req, res) => {
-    console.log('Teste locais');
-    res.send("API funcionando");
+router.get("/teste", (req, res) => {
+  console.log("Teste locais");
+  res.send("API funcionando");
 });
-
 
 /**
  * @swagger
  * /transacao/:
  *   get:
- *     summary: Lista todos as transação
- *     description: Retorna todo as transações
+ *     summary: Lista todos os empréstimos
  *     tags: [transacao]
- *     responses:
- *       200:
- *         description: Lista de estados retornada com sucesso.
  */
-router.get('/', async (req, res) => {
-    try {
-        const query = 'SELECT * FROM emprestimo';
-        const result = await connection.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ Error: err.message });
-    }
+router.get("/", async (req, res) => {
+  try {
+    const query = "SELECT * FROM emprestimo";
+    const result = await connection.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ Error: err.message });
+  }
 });
+
 /**
  * @swagger
  * /transacao/ativos:
  *   get:
- *     summary: Lista todos as transação
- *     description: Retorna todo as transações
+ *     summary: Lista empréstimos ativos
  *     tags: [transacao]
- *     responses:
- *       200:
- *         description: Lista de estados retornada com sucesso.
  */
-router.get('/ativos',authMiddleware, async (req, res) => {
-    try {
-        const query = 'SELECT * FROM emprestimo where status = ativo';
-        const result = await connection.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ Error: err.message });
-    }
+router.get("/ativos", authMiddleware, async (req, res) => {
+  try {
+    const query = "SELECT * FROM emprestimo WHERE status = 'Ativo'";
+    const result = await connection.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ Error: err.message });
+  }
 });
 
 /**
  * @swagger
  * /transacao/info:
  *   get:
- *     summary: Lista todos as transação
- *     description: Retorna todo as transações
+ *     summary: Retorna informações detalhadas dos empréstimos
  *     tags: [transacao]
- *     responses:
- *       200:
- *         description: Lista de estados retornada com sucesso.
  */
-router.get('/info',authMiddleware, async (req, res) => {
-    try {
-        const selectQuery = ' SELECT e.comodato_id, c.nome_comodato, c.sobrenome_comodato, e.status, q.nome_material, e.estoque_id, c.numero_telefone, e.data_limite, e.id_emprestimo  FROM emprestimo e INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato LEFT JOIN estoque q ON e.estoque_id = q.id_estoque;'
-        const result = await connection.query(selectQuery);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ Error: err.message });
-    }
+router.get("/info", authMiddleware, async (req, res) => {
+  try {
+    const selectQuery = `
+SELECT 
+    e.id_emprestimo,
+    e.comodato_id,
+    c.nome_comodato,
+    c.sobrenome_comodato,
+    c.numero_telefone,
+    e.status,
+    e.data_criacao,
+    e.data_limite,
+    i.identificacao_do_item,
+    s.descricao AS descricao_sub_categoria,
+    s.nome
+FROM emprestimo e
+INNER JOIN pessoas_comodato c 
+    ON e.comodato_id = c.id_comodato
+LEFT JOIN item i 
+    ON e.item_id = i.id_item
+LEFT JOIN sub_categoria s 
+    ON i.sub_categoria_id = s.id_sub_categoria;
+    `;
+    const result = await connection.query(selectQuery);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ Error: err.message });
+  }
 });
-
-
 
 /**
  * @swagger
  * /transacao/concluidos:
  *   get:
- *     summary: Lista todos as transação
- *     description: Retorna todo as transações
+ *     summary: Lista empréstimos concluídos
  *     tags: [transacao]
- *     responses:
- *       200:
- *         description: Lista de estados retornada com sucesso.
  */
-router.get('/concluidos',authMiddleware, async (req, res) => {
-    try {
-        const query = 'SELECT * FROM emprestimo where status = concluidos';
-        const result = await connection.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ Error: err.message });
-    }
+router.get("/concluidos", authMiddleware, async (req, res) => {
+  try {
+    const query = "SELECT * FROM emprestimo WHERE status = 'Concluido'";
+    const result = await connection.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ Error: err.message });
+  }
 });
 
+/**
+ * @swagger
+ * /transacao/:
+ *   post:
+ *     summary: Cria um novo empréstimo
+ *     tags: [transacao]
+ */
+router.post("/", authMiddleware, async (req, res) => {
+  try {
+    const { cpf, user_id, item_id, data } = req.body;
 
+    if (!user_id || !item_id || !Array.isArray(item_id) || item_id.length === 0) {
+      return res.status(400).json({
+        Error: "Os campos são obrigatórios e item_id deve ser uma lista com pelo menos um item.",
+      });
+    }
+
+    const idQuery = `SELECT id_comodato FROM pessoas_comodato WHERE cpf = $1`;
+    const resultComodato = await connection.query(idQuery, [cpf]);
+
+    if (resultComodato.rowCount === 0) {
+      return res.status(400).json({ Error: "Comodato não encontrado para este CPF" });
+    }
+
+    const comodato_id = resultComodato.rows[0].id_comodato;
+    const insertQuery = `
+      INSERT INTO emprestimo (comodato_id, user_id, item_id, status, data_criacao)
+      VALUES ($1, $2, $3, $4,$5)
+      RETURNING *;
+    `;
+
+    const results = [];
+    for (const id of item_id) {
+      const resultInsert = await connection.query(insertQuery, [
+        comodato_id,
+        user_id,
+        id,
+        "Ativo",
+        data
+      ]);
+      results.push(resultInsert.rows[0]);
+    }
+
+    // Buscar nome + data limite para envio de e-mail
+    const selectQuery = `
+      SELECT c.nome_comodato, c.sobrenome_comodato, e.data_limite
+      FROM emprestimo e
+      INNER JOIN pessoas_comodato c ON e.comodato_id = c.id_comodato
+      WHERE e.comodato_id = $1
+      LIMIT 1;
+    `;
+    const resultSelect = await connection.query(selectQuery, [comodato_id]);
+    const { nome_comodato, sobrenome_comodato, data_limite } = resultSelect.rows[0];
+
+    try {
+      scheduleEmail(data_limite, nome_comodato, sobrenome_comodato);
+    } catch (err) {
+      console.log("Erro ao agendar e-mail:", err);
+    }
+
+    res.status(201).json({ message: "Empréstimos criados com sucesso!", transacoes: results });
+  } catch (error) {
+    res.status(500).json({ Error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /transacao/status:
+ *   put:
+ *     summary: Altera o status de um empréstimo
+ *     tags: [transacao]
+ */
+router.put("/status", authMiddleware, async (req, res) => {
+  try {
+    const { id_emprestimo } = req.body;
+    const query = "UPDATE emprestimo SET status = 'Concluido' WHERE id_emprestimo = $1 RETURNING *";
+    const result = await connection.query(query, [id_emprestimo]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ Error: "Empréstimo não encontrado" });
+    }
+
+    res.status(200).json({ message: "Status atualizado com sucesso!", emprestimo: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ Error: error.message });
+  }
+});
 
 
 /**
@@ -202,393 +284,185 @@ function formatTelefone(tel) {
  */
 
 
+
+// Rota para gerar DOCX do comodato
 router.post('/doc', authMiddleware, async (req, res) => {
-  const hoje = new Date();
-  const dataFormatada = hoje.toLocaleDateString('pt-BR');
   let new_id;
-  console.log('passo 1')
+
   try {
     const { id, area } = req.body;
-    if (!id) {
-      return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
-    }
-    console.log('passo 2')
+    if (!id) return res.status(400).json({ error: 'ID do comodato é obrigatório.' });
+
+    // Determinar o comodato
     if (area === "relatorio") {
       const areaQuery = 'SELECT comodato_id FROM emprestimo WHERE id_emprestimo = $1';
       const emprestResult = await connection.query(areaQuery, [id]);
-      if (emprestResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Comodato não encontrado.' });
-      }
+      if (emprestResult.rows.length === 0) return res.status(404).json({ error: 'Comodato não encontrado.' });
       new_id = emprestResult.rows[0].comodato_id;
+    } else {
+      new_id = id;
     }
-    else {
-      new_id = id 
-    }
-console.log('passo 3')
-    // Buscar dados do comodato, cidade e estado
+
+    
+    // Buscar dados do comodato
     const comodatoQuery = `
-      SELECT
-        pc.id_comodato,
-        pc.nome_comodato,
-        pc.sobrenome_comodato,
-        pc.cpf,
-        pc.rg,
-        pc.cep,
-        pc.profissao,
-        pc.estado_civil,
-        pc.rua,
-        pc.bairro,
-        pc.numero_casa,
-        pc.complemento,
-        pc.nacionalidade,
-        pc.numero_telefone,
-        pc.numero_telefone2,
-        c.nome_cidades AS cidade,
-        e.nome_estado AS estado
-      FROM Pessoas_Comodato pc
-      JOIN Cidades c ON pc.cidade_id = c.id_cidade
-      JOIN Estados e ON c.estado_id = e.id_estado
-      WHERE pc.id_comodato = $1;
+    SELECT pc.*, c.nome_cidades AS cidade, e.nome_estado AS estado
+    FROM Pessoas_Comodato pc
+    JOIN Cidades c ON pc.cidade_id = c.id_cidade
+    JOIN Estados e ON c.estado_id = e.id_estado
+    WHERE pc.id_comodato = $1;
     `;
     const comodatoResult = await connection.query(comodatoQuery, [new_id]);
-    if (comodatoResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Comodato não encontrado.' });
-    }
+    if (comodatoResult.rows.length === 0) return res.status(404).json({ error: 'Comodato não encontrado.' });
     const comodato = comodatoResult.rows[0];
-console.log('passo 4')
-    // Buscar nome do usuário que criou o comodato (um dos usuários)
+    
+    // Buscar usuário que criou o comodato
     const usuarioQuery = `
-      SELECT u.nome_user || u.sobrenome_user as secretaria_completo,
-      tipo_user
-      FROM Emprestimo emp
-      JOIN Usuarios u ON emp.user_id = u.id_user
-      WHERE emp.comodato_id =  $1
-      LIMIT 1;
+    SELECT u.nome_user || ' ' || u.sobrenome_user AS secretaria_completo, u.tipo_user
+    FROM Emprestimo emp
+    JOIN Usuarios u ON emp.user_id = u.id_user
+    WHERE emp.comodato_id = $1
+    LIMIT 1;
     `;
     const usuarioResult = await connection.query(usuarioQuery, [new_id]);
-    const usuario = usuarioResult.rows[0] || { nome_user: 'Desconhecido', sobrenome_user: '' };
-console.log('passo 5')
+    const usuario = usuarioResult.rows[0] || { secretaria_completo: 'Desconhecido', tipo_user: 'N/A' };
+    
     // Buscar itens emprestados
-    const itensQuery = `
-      SELECT est.nome_material, est.descricao, est.tamanho
-      FROM Emprestimo emp
-      JOIN Estoque est ON emp.estoque_id = est.id_estoque
-      WHERE emp.comodato_id = $1;
-    `;
-    const itensResult = await connection.query(itensQuery, [new_id]);
-    const itens = itensResult.rows;
-    const datesql = `
-    SELECT 
+// Buscar itens emprestados (já trazendo id_item)
+const itensQuery = `
+  SELECT 
+    i.id_item,
+    i.identificacao_do_item AS nome_material, 
+    sc.nome AS sub_categoria, 
+    sc.descricao
+  FROM Emprestimo emp
+  JOIN Item i ON emp.item_id = i.id_item
+  JOIN Sub_Categoria sc ON i.sub_categoria_id = sc.id_sub_categoria
+  WHERE emp.comodato_id = $1;
+`;
+const itensResult = await connection.query(itensQuery, [new_id]);
+const itens = itensResult.rows;
+
+// Data atual
+const datesql = `
+  SELECT 
     EXTRACT(YEAR FROM now() AT TIME ZONE 'America/Campo_Grande') AS ano,
     EXTRACT(MONTH FROM now() AT TIME ZONE 'America/Campo_Grande') AS mes,
     EXTRACT(DAY FROM now() AT TIME ZONE 'America/Campo_Grande') AS dia;
-    `;
-    const date_result = await connection.query(datesql);
-    const date_obj = date_result.rows;
-    const { ano, mes , dia} = date_obj[0]
+`;
+const date_result = await connection.query(datesql);
+const { ano, mes, dia } = date_result.rows[0];
+const ano_p = ano + 1;
 
+// Atualizar todos os itens emprestados para status = false
+if (itens.length > 0) {
+  const ids = itens.map(i => i.id_item);
+
+  const update_sql = `
+    UPDATE item 
+    SET status = false 
+    WHERE id_item = ANY($1::int[])
+    RETURNING *;
+  `;
+  const update_result = await connection.query(update_sql, [ids]);
+
+  console.log("Itens atualizados:", update_result.rows);
+} else {
+  console.log("Nenhum item emprestado encontrado para este comodato.");
+}
+    // Buscar presidente
     const presidentesql = `
-SELECT nome_user || ' ' || sobrenome_user AS nome_completo
-FROM usuarios
-WHERE tipo_user = 'Presidente';
+    SELECT nome_user || ' ' || sobrenome_user AS nome_completo
+    FROM usuarios
+    WHERE tipo_user = 'Presidente'
+      LIMIT 1;
     `;
     const presidente_result = await connection.query(presidentesql);
-    const presidente_obj = presidente_result.rows[0];
+    const presidente_obj = presidente_result.rows[0] || { nome_completo: 'N/A' };
 
+    // Buscar coordenador
     const coordenadorsql = `
-SELECT nome_user || sobrenome_user AS nome_completo, tipo_user
-FROM usuarios
-WHERE tipo_user = 'Coordenador de banco ortopédico';
+      SELECT nome_user || ' ' || sobrenome_user AS nome_completo, tipo_user
+      FROM usuarios
+      WHERE tipo_user = 'Diretor de Patrimonio'
+      LIMIT 1;
     `;
     const coordenador_query = await connection.query(coordenadorsql);
-    const coordenador_obj = coordenador_query.rows[0];
+    const coordenador_obj = coordenador_query.rows[0] || { nome_completo: 'N/A', tipo_user: 'N/A' };
 
-    const contador_sql = `
-    SELECT COUNT(*) 
-    FROM emprestimo 
-    WHERE id_emprestimo <= $1;
-    `;
+    // Contador de empréstimos
+    const contador_sql = `SELECT COUNT(*)::int AS total FROM emprestimo WHERE id_emprestimo <= $1;`;
     const contador_query = await connection.query(contador_sql, [id]);
     const contador_obj = contador_query.rows[0];
-console.log('passo 6')
-    // Carregar e preencher o template
-    const filePath = path.join(__dirname, '..', 'template', 'modelo3.docx');
-    const content = await fs.readFile(filePath);
-    const zip = new PizZip(content);
 
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
-    const ano_p = ano + 1
-    // Montar objeto com os dados para template
-const dados = {
-  nome: comodato.nome_comodato,
-  sobrenome: comodato.sobrenome_comodato,
-  CPF: formatCPF(comodato.cpf),
-  RG: comodato.rg,
-  CEP: comodato.cep,
-  profissao: comodato.profissao,
-  estado_civil: comodato.estado_civil,
-  rua: comodato.rua,
-  numero: comodato.numero_casa,
-  complemento: comodato.complemento,
-  telefone: formatTelefone(comodato.numero_telefone),
-  telefone2: formatTelefone(comodato.numero_telefone2),
-  bairro: comodato.bairro,
-  nacionalidade: comodato.nacionalidade,
-  cidade: comodato.cidade,
-  estado: comodato.estado,
-  nome_usuario: usuario.secretaria_completo,
-  Cargo: usuario.tipo_user,
-  dia,
-  mes,
-  ano,
-  ano_p,
-  contador: contador_obj.count,
-  Presidente: presidente_obj.nome_completo,
-  nome_usuariocoordenador: coordenador_obj.nome_completo,
-  Cargo_coordenador: coordenador_obj.tipo_user,
-  items: itens.map(item => ({
-    nome_item: item.nome_material
-  })),
-};
+    // Carregar template DOCX
+    const filePath = path.join(__dirname, '..', 'template', 'modelo3.docx');
+    const content = await fs.readFile(filePath); // ✅ usando fs/promises
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+    // Montar dados para template
+    const dados = {
+      nome: comodato.nome_comodato,
+      sobrenome: comodato.sobrenome_comodato,
+      CPF: formatCPF(comodato.cpf),
+      RG: comodato.rg,
+      CEP: comodato.cep,
+      profissao: comodato.profissao,
+      estado_civil: comodato.estado_civil,
+      rua: comodato.rua,
+      numero: comodato.numero_casa,
+      complemento: comodato.complemento,
+      telefone: formatTelefone(comodato.numero_telefone),
+      telefone2: formatTelefone(comodato.numero_telefone2),
+      bairro: comodato.bairro,
+      nacionalidade: comodato.nacionalidade,
+      cidade: comodato.cidade,
+      estado: comodato.estado,
+      nome_usuario: usuario.secretaria_completo,
+      Cargo: usuario.tipo_user,
+      dia,
+      mes,
+      ano,
+      ano_p,
+      contador: contador_obj.total,
+      Presidente: presidente_obj.nome_completo,
+      nome_usuariocoordenador: coordenador_obj.nome_completo,
+      Cargo_coordenador: coordenador_obj.tipo_user,
+      items: itens.map(item => ({
+        nome_item: item.nome_material,
+        sub_categoria: item.sub_categoria,
+        descricao: item.descricao
+      })),
+    };
 
     doc.setData(dados);
 
     try {
       doc.render();
     } catch (error) {
-      console.error('Erro ao renderizar o DOCX:', error);
-      return res.status(500).json({ error: 'Erro ao gerar o documento.' });
+      console.error("Erro ao renderizar DOCX:", error);
+      return res.status(500).json({ error: "Erro ao gerar o documento." });
     }
 
-    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+    const buf = doc.getZip().generate({ type: "nodebuffer" });
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename=comodato_${id}.docx`);
-    return res.send(buf);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=comodato_${id}.docx`
+    );
+    res.send(buf);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: error });
+    res.status(500).json({ error: "Erro ao consultar o banco de dados." });
   }
 });
-
-
-
-/**
- * @swagger
- * /transacao/:
- *   post:
- *     summary: Cria uma nova transação
- *     description: Adiciona uma nova transação ao banco de dados.
- *     tags: [transacao]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               cpf:
- *                 type: integer
- *               user_id:
- *                 type: integer
- *               estoque_id:
- *                 type: array
- *                 items:
- *                   type: integer
-
- *     responses:
- *       201:
- *         description: Transação criada com sucesso.
- */
-router.post('/',authMiddleware, async (req, res) => {
-    try {
-        const {  cpf ,user_id, estoque_id } = req.body;
-
-        if ( !user_id || !estoque_id || !Array.isArray(estoque_id) || estoque_id.length === 0) {
-            return res.status(400).json({ Error: "Os campos são obrigatórios e estoque_id deve ser uma lista com pelo menos um item." });
-        }
-        const idQuery = `
-        SELECT id_comodato FROM Pessoas_Comodato 
-        WHERE cpf = $1 ;
-     `;
-        const resulte = await connection.query(idQuery, [cpf]);
-
-        if (resulte.rowCount ===0) {
-            return res.status(400).json({ Error: `não foi possivel trazer o usuario` });
-
-        }
-
-        const id_como = resulte.rows[0]?.id_comodato
-        console.log(id_como)
-        const insertQuery = "INSERT INTO emprestimo (comodato_id, user_id, estoque_id, status) VALUES ($1, $2, $3, $4) RETURNING *";
-        const updateQuery = "UPDATE Quantidades SET quantidade = quantidade - 1 WHERE estoque_id = $1 AND quantidade > 0 RETURNING quantidade";
-        const selectQuery = "select c.nome_comodato,c.sobrenome_comodato,e.comodato_id, e.data_limite from emprestimo e inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato where e.comodato_id = $1";
-        const results = [];
-
-        for (const id of estoque_id) {
-            const updateResult = await connection.query(updateQuery, [id]);
-
-            if (updateResult.rowCount === 0) {
-                return res.status(400).json({ Error: `Estoque insuficiente para o item ${id}.` });
-            }
-
-            const result = await connection.query(insertQuery, [id_como, user_id, id, 'Ativo']);
-            results.push(result.rows[0]);
-        }
-
-
-        console.log('passou aqui')
-        const resultado = await connection.query(selectQuery, [id_como])
-        if (resultado.rowCount === 0) {
-            console.log(resultado.rows[0])
-            console.log('passou aqui 2')
-
-            return res.status(400).json({Error: 'N foi possivel agendar o usuario'})
-        } 
-        const {nome_comodato, sobrenome_comodato, data_limite} = resultado.rows[0]
-
-        console.log('passou aqui3')
-
-        try{
-            scheduleEmail( data_limite, nome_comodato, sobrenome_comodato)
-            console.log('passou aqui4')
-
-        }
-        catch (err) {
-            console.log(err, 'erro no schedule')
-        }
-
-        res.status(201).json({ message: "Transações inseridas com sucesso!", transacoes: results });
-    } catch (error) {
-        console.log('passou erro')
-
-        res.status(500).json({ Error: error.message});
-    }
-});
-
-
-/**
- * @swagger
- * /transacao/select:
- *   post:
- *     summary: seleciona items 
- *     description: Adiciona uma nova transação ao banco de dados.
- *     tags: [transacao]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nome_user:
- *                 type: string
- *               nome_comodato:
- *                 type: string
- *               status:
- *                 type: string
- *               data_limite:
- *                 type: string   
- *     responses:
- *       201:
- *         description: Transação criada com sucesso.
- */
-router.post('/select',authMiddleware, async (req, res) => {
-    try {
-        const { nome_user, status, nome_comodato, data_limite} = req.body;
-        const inner = "inner join  pessoas_comodato c on  e.comodato_id = c.id_comodato inner join estoque q on e.estoque_id = q.id_estoque"
-        const where = "where status = $1 and nome_user = $2 and nome_comodato = $3 and data_limite = $4"
-        const query = "select e.comodato_id,c.nome_comodato,c.sobrenome_comodato,e.status,q.nome_material,e.estoque_id, e.data_limite from emprestimo e " + inner + where;
-        const result = await connection.query(query, status, nome_user, nome_comodatom, data_limite);
-        res.status(201).json({ message: "selected items", material: result.rows[0] });
-    } catch (error) {
-        res.status(500).json({ Error: error.message });
-    }
-});
-
-/**
- * @swagger
- * /transacao/especifico:
- *   post:
- *     summary: Seleciona items do usuário
- *     description: Retorna os IDs de empréstimo de um usuário específico.
- *     tags: [transacao]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id:
- *                 type: string
- *                 example: "123"
- *     responses:
- *       201:
- *         description: Transações retornadas com sucesso.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id_emprestimo:
- *                         type: integer
- *       500:
- *         description: Erro interno do servidor.
- */
-router.post('/esp', authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.body;
-
-    const query = "SELECT id_emprestimo FROM emprestimo WHERE user_id = $1";
-    const result = await connection.query(query, [id]);
-
-    res.status(201).json({ user: result.rows }); // Adicionado .rows para retornar apenas os dados
-  } catch (error) {
-    res.status(500).json({ Error: error.message });
-  }
-});
-
-/**
- * @swagger
- * /transacao/status:
- *   put:
- *     summary: altera o status
- *     description: Adiciona uma nova transação ao banco de dados.
- *     tags: [transacao]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id_emprestimo:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Transação alteradacom sucesso.
- */
-router.put('/status',authMiddleware, async (req, res) => {
-    try {
-        const { id_emprestimo  }  = req.body;
-        const query = "UPDATE emprestimo SET status = 'Concluido' WHERE id_emprestimo  = $1";
-        const result = await connection.query(query,[id_emprestimo ] );
-        res.status(201).json({ message: "selected items", material: result.rows[0] });
-    } catch (error) {
-        res.status(500).json({ Error: error.message });
-    }
-});
-
-
 
 export default router;
+
+

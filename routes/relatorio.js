@@ -115,7 +115,7 @@ router.get('/comodatocidade',authMiddleware, async (req, res) => {
  *                     example: 12
  *       500:
  *         description: Erro interno no servidor
- */
+ */   
 router.get('/usersdata',authMiddleware, async (req, res) => {
     try {
         const query = `SELECT * FROM emprestimo_totais_com_datas();`;

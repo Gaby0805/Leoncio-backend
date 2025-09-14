@@ -4,24 +4,7 @@ import {authMiddleware} from './authuser.js'
 const router = express.Router();
 const isEmpty = (value) => !value || value.toString().trim() === '';
 
-/**
- * @swagger
- * tags:
- *   - name: estoque
- *     description: Endpoints para gerenciar o estoque
- */
 
-/**
- * @swagger
- * /estoque/teste:
- *   get:
- *     summary: Teste da API
- *     description: Verifica se a API está funcionando corretamente.
- *     tags: [estoque]
- *     responses:
- *       200:
- *         description: API funcionando.
- */
 router.get('/teste', (req, res) => {
     console.log('Teste Estoque');
     res.send('API funcionando corretamente.');
@@ -130,17 +113,6 @@ router.get('/ComodatoListtext',authMiddleware, async (req, res) => {
 
 
 
-/**
- * @swagger
- * /estoque/lions:
- *   get:
- *     summary: Listar quantidades de materiais com informações do estoque 
- *     description: Retorna a quantidade dos produtos junto com os detalhes do estoque usando INNER JOIN para o estoque do Lions em geral.
- *     tags: [estoque]
- *     responses:
- *       200:
- *         description: Lista de quantidades com detalhes do estoque retornada com sucesso.
- */
 router.get('/lions',authMiddleware, async (req, res) => {
     try {
         const query = `
@@ -156,38 +128,7 @@ router.get('/lions',authMiddleware, async (req, res) => {
 });
 
 
-/**
- * @swagger
- * /estoque:
- *   post:
- *     summary: Adicionar um novo material ao estoque
- *     description: Insere um novo material no banco de dados.
- *     tags: [estoque]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nome_material:
- *                 type: string
- *               descricao:
- *                 type: string
- *               valor:
- *                 type: number
- *               status:
- *                 type: string
- *               area_material:
- *                 type: string
- *               aquisicao: 
- *                 type: string
- *               tamanho:
- *                 type: string
- *     responses:
- *       201:
- *         description: Material inserido com sucesso.
- */
+
 
 router.post('/',authMiddleware, async (req, res) => {
     try {
@@ -206,26 +147,6 @@ router.post('/',authMiddleware, async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /estoque:
- *   delete:
- *     summary: Excluir um material do estoque
- *     description: Remove um material do banco de dados pelo ID.
- *     tags: [estoque]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id_estoque:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Material excluído com sucesso.
- */
 router.delete('/', authMiddleware, async (req, res) => {
     try {
         const { id_estoque } = req.body;
@@ -262,40 +183,6 @@ router.delete('/', authMiddleware, async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /estoque:
- *   put:
- *     summary: Atualizar um material do estoque
- *     description: Altera um material no banco de dados pelo ID.
- *     tags: [estoque]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id_estoque:
- *                 type: integer
- *               nome_material:
- *                 type: string
- *               descricao:
- *                 type: string
- *               valor:
- *                 type: number
- *               status:
- *                 type: string
- *               area_material:
- *                 type: string
- *               aquisicao:
- *                 type: string
- *               tamanho:
- *                 type: string
- *     responses:
- *       200:
- *         description: Material atualizado com sucesso.
- */
 router.put('/',authMiddleware, async (req, res) => {
     try {
         const { estoque_id, nome_material, descricao,  status, tamanho } = req.body;
