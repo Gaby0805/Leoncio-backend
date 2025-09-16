@@ -384,7 +384,7 @@ if (itens.length > 0) {
     const coordenadorsql = `
       SELECT nome_user || ' ' || sobrenome_user AS nome_completo, tipo_user
       FROM usuarios
-      WHERE tipo_user = 'Diretor de Patrimonio'
+      WHERE tipo_user = 'Coordenador de banco ortopédico'
       LIMIT 1;
     `;
     const coordenador_query = await connection.query(coordenadorsql);
