@@ -155,7 +155,7 @@ router.post('/especifico',authMiddleware, async (req, res) => {
 });
 /**
  * @swagger
- * /usuario/:
+ * /usuario:
  *   post:
  *     summary: Cria um novo usuario
  *     description: Adiciona um novo usuario no banco de dados.
@@ -238,7 +238,7 @@ router.post('/autenticar', async (req, res) => {
             return res.status(400).json({ Error: "Todos os campos são obrigatórios." });
         }
         // Consultar o banco de dados
-        const query = "SELECT id_user,tipo_user, senha FROM Usuarios WHERE email = $1";
+        const query = "SELECT id_user,tipo_user, senha FROM usuarios WHERE email = $1";
         const result = await connection.query(query, [email]);
         if (result.rows.length > 0) {
 
@@ -251,9 +251,9 @@ router.post('/autenticar', async (req, res) => {
             }
 
             const ismatch = await bcrypt.compare(senha, user.senha);
-            console.log("Passo 1");
+            console.log("Passo 1", ismatch);
             if (ismatch) {
-                console.log("Passo 2");
+                console.log("Passo 2", ismatch);
                 try {
                     const token = validationLogin(user.id_user);
                     console.log("Passo 3");
@@ -355,17 +355,18 @@ router.put('/',authMiddleware, async (req, res) => {
         if (isEmpty(u_cpf) || isEmpty(u_email) || isEmpty(u_nome) || isEmpty(u_sobrenome) || isEmpty(u_tipo) ) {
             return res.status(400).json({ Error: "Os todos os campos são obrigatórios." });
         }
+        console.log(id_usuario)
 
 const query = `
   UPDATE usuarios
   SET 
-    u_nome = $2,
-    u_sobrenome = $3,
-    u_email = $4,
-    u_cpf = $5,
-    u_tipo = $6
-  WHERE id_usuario = $1
-  RETURNING id_usuario, u_nome, u_sobrenome, u_email, u_cpf, u_tipo;
+    nome_user = $2,
+    sobrenome_user = $3,
+    email = $4,
+    cpf = $5,
+    tipo_user = $6
+  WHERE id_user = $1
+  RETURNING id_user, nome_user, sobrenome_user, email, cpf, tipo_user;
 `;
         const result = await connection.query(query, [id_usuario,u_nome,u_sobrenome,u_email,u_cpf,u_tipo ]);
 

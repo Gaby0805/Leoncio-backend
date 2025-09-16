@@ -33,7 +33,7 @@ async function reagendarEmails() {
       scheduleEmail(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
       console.log(emprestimo, emprestimo.nome_comodato, emprestimo.sobrenome_comodato);
     });
-  } catch (error) {
+  } catch (error) {    
     console.error('Erro ao reagendar e-mails:', error);
   }
 }
